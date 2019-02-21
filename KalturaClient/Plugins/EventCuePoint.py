@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,9 +27,22 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from CuePoint import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from .CuePoint import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -85,6 +98,8 @@ class KalturaEventCuePoint(KalturaCuePoint):
             forceStop=NotImplemented,
             thumbOffset=NotImplemented,
             systemName=NotImplemented,
+            isMomentary=NotImplemented,
+            copiedFrom=NotImplemented,
             eventType=NotImplemented):
         KalturaCuePoint.__init__(self,
             id,
@@ -102,7 +117,9 @@ class KalturaEventCuePoint(KalturaCuePoint):
             partnerSortValue,
             forceStop,
             thumbOffset,
-            systemName)
+            systemName,
+            isMomentary,
+            copiedFrom)
 
         # @var KalturaEventType
         self.eventType = eventType

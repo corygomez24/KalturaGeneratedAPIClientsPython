@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,9 +27,22 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from ContentDistribution import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from .ContentDistribution import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -193,7 +206,7 @@ class KalturaFacebookDistributionJobProviderData(KalturaConfigurableDistribution
     def __init__(self,
             fieldValues=NotImplemented,
             videoAssetFilePath=NotImplemented,
-            thumbAssetFilePath=NotImplemented,
+            thumbAssetId=NotImplemented,
             captionsInfo=NotImplemented):
         KalturaConfigurableDistributionJobProviderData.__init__(self,
             fieldValues)
@@ -202,7 +215,7 @@ class KalturaFacebookDistributionJobProviderData(KalturaConfigurableDistribution
         self.videoAssetFilePath = videoAssetFilePath
 
         # @var string
-        self.thumbAssetFilePath = thumbAssetFilePath
+        self.thumbAssetId = thumbAssetId
 
         # @var array of KalturaFacebookCaptionDistributionInfo
         self.captionsInfo = captionsInfo
@@ -210,8 +223,8 @@ class KalturaFacebookDistributionJobProviderData(KalturaConfigurableDistribution
 
     PROPERTY_LOADERS = {
         'videoAssetFilePath': getXmlNodeText, 
-        'thumbAssetFilePath': getXmlNodeText, 
-        'captionsInfo': (KalturaObjectFactory.createArray, KalturaFacebookCaptionDistributionInfo), 
+        'thumbAssetId': getXmlNodeText, 
+        'captionsInfo': (KalturaObjectFactory.createArray, 'KalturaFacebookCaptionDistributionInfo'), 
     }
 
     def fromXml(self, node):
@@ -222,7 +235,7 @@ class KalturaFacebookDistributionJobProviderData(KalturaConfigurableDistribution
         kparams = KalturaConfigurableDistributionJobProviderData.toParams(self)
         kparams.put("objectType", "KalturaFacebookDistributionJobProviderData")
         kparams.addStringIfDefined("videoAssetFilePath", self.videoAssetFilePath)
-        kparams.addStringIfDefined("thumbAssetFilePath", self.thumbAssetFilePath)
+        kparams.addStringIfDefined("thumbAssetId", self.thumbAssetId)
         kparams.addArrayIfDefined("captionsInfo", self.captionsInfo)
         return kparams
 
@@ -232,11 +245,11 @@ class KalturaFacebookDistributionJobProviderData(KalturaConfigurableDistribution
     def setVideoAssetFilePath(self, newVideoAssetFilePath):
         self.videoAssetFilePath = newVideoAssetFilePath
 
-    def getThumbAssetFilePath(self):
-        return self.thumbAssetFilePath
+    def getThumbAssetId(self):
+        return self.thumbAssetId
 
-    def setThumbAssetFilePath(self, newThumbAssetFilePath):
-        self.thumbAssetFilePath = newThumbAssetFilePath
+    def setThumbAssetId(self, newThumbAssetId):
+        self.thumbAssetId = newThumbAssetId
 
     def getCaptionsInfo(self):
         return self.captionsInfo
@@ -559,7 +572,6 @@ class KalturaFacebookDistributionClientPlugin(KalturaClientPlugin):
 
     def getEnums(self):
         return {
-            'KalturaFacebookDistributionField': KalturaFacebookDistributionField,
             'KalturaFacebookDistributionProfileOrderBy': KalturaFacebookDistributionProfileOrderBy,
             'KalturaFacebookDistributionProviderOrderBy': KalturaFacebookDistributionProviderOrderBy,
         }

@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,8 +27,21 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -202,8 +215,10 @@ class KalturaDocumentEntry(KalturaBaseEntry):
             operationAttributes=NotImplemented,
             entitledUsersEdit=NotImplemented,
             entitledUsersPublish=NotImplemented,
+            entitledUsersView=NotImplemented,
             capabilities=NotImplemented,
             templateEntryId=NotImplemented,
+            displayInSearch=NotImplemented,
             documentType=NotImplemented,
             assetParamsIds=NotImplemented):
         KalturaBaseEntry.__init__(self,
@@ -248,8 +263,10 @@ class KalturaDocumentEntry(KalturaBaseEntry):
             operationAttributes,
             entitledUsersEdit,
             entitledUsersPublish,
+            entitledUsersView,
             capabilities,
-            templateEntryId)
+            templateEntryId,
+            displayInSearch)
 
         # The type of the document
         # @var KalturaDocumentType
@@ -302,7 +319,7 @@ class KalturaDocumentListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'objects': (KalturaObjectFactory.createArray, KalturaDocumentEntry), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaDocumentEntry'), 
     }
 
     def fromXml(self, node):
@@ -362,6 +379,7 @@ class KalturaDocumentFlavorParams(KalturaFlavorParams):
             multiStream=NotImplemented,
             anamorphicPixels=NotImplemented,
             isAvoidForcedKeyFrames=NotImplemented,
+            forcedKeyFramesMode=NotImplemented,
             isCropIMX=NotImplemented,
             optimizationPolicy=NotImplemented,
             maxFrameRate=NotImplemented,
@@ -370,6 +388,8 @@ class KalturaDocumentFlavorParams(KalturaFlavorParams):
             watermarkData=NotImplemented,
             subtitlesData=NotImplemented,
             isEncrypted=NotImplemented,
+            contentAwareness=NotImplemented,
+            chunkedEncodeMode=NotImplemented,
             clipOffset=NotImplemented,
             clipDuration=NotImplemented):
         KalturaFlavorParams.__init__(self,
@@ -413,6 +433,7 @@ class KalturaDocumentFlavorParams(KalturaFlavorParams):
             multiStream,
             anamorphicPixels,
             isAvoidForcedKeyFrames,
+            forcedKeyFramesMode,
             isCropIMX,
             optimizationPolicy,
             maxFrameRate,
@@ -421,6 +442,8 @@ class KalturaDocumentFlavorParams(KalturaFlavorParams):
             watermarkData,
             subtitlesData,
             isEncrypted,
+            contentAwareness,
+            chunkedEncodeMode,
             clipOffset,
             clipDuration)
 
@@ -482,6 +505,7 @@ class KalturaImageFlavorParams(KalturaFlavorParams):
             multiStream=NotImplemented,
             anamorphicPixels=NotImplemented,
             isAvoidForcedKeyFrames=NotImplemented,
+            forcedKeyFramesMode=NotImplemented,
             isCropIMX=NotImplemented,
             optimizationPolicy=NotImplemented,
             maxFrameRate=NotImplemented,
@@ -490,6 +514,8 @@ class KalturaImageFlavorParams(KalturaFlavorParams):
             watermarkData=NotImplemented,
             subtitlesData=NotImplemented,
             isEncrypted=NotImplemented,
+            contentAwareness=NotImplemented,
+            chunkedEncodeMode=NotImplemented,
             clipOffset=NotImplemented,
             clipDuration=NotImplemented,
             densityWidth=NotImplemented,
@@ -538,6 +564,7 @@ class KalturaImageFlavorParams(KalturaFlavorParams):
             multiStream,
             anamorphicPixels,
             isAvoidForcedKeyFrames,
+            forcedKeyFramesMode,
             isCropIMX,
             optimizationPolicy,
             maxFrameRate,
@@ -546,6 +573,8 @@ class KalturaImageFlavorParams(KalturaFlavorParams):
             watermarkData,
             subtitlesData,
             isEncrypted,
+            contentAwareness,
+            chunkedEncodeMode,
             clipOffset,
             clipDuration)
 
@@ -662,6 +691,7 @@ class KalturaPdfFlavorParams(KalturaFlavorParams):
             multiStream=NotImplemented,
             anamorphicPixels=NotImplemented,
             isAvoidForcedKeyFrames=NotImplemented,
+            forcedKeyFramesMode=NotImplemented,
             isCropIMX=NotImplemented,
             optimizationPolicy=NotImplemented,
             maxFrameRate=NotImplemented,
@@ -670,6 +700,8 @@ class KalturaPdfFlavorParams(KalturaFlavorParams):
             watermarkData=NotImplemented,
             subtitlesData=NotImplemented,
             isEncrypted=NotImplemented,
+            contentAwareness=NotImplemented,
+            chunkedEncodeMode=NotImplemented,
             clipOffset=NotImplemented,
             clipDuration=NotImplemented,
             readonly=NotImplemented):
@@ -714,6 +746,7 @@ class KalturaPdfFlavorParams(KalturaFlavorParams):
             multiStream,
             anamorphicPixels,
             isAvoidForcedKeyFrames,
+            forcedKeyFramesMode,
             isCropIMX,
             optimizationPolicy,
             maxFrameRate,
@@ -722,6 +755,8 @@ class KalturaPdfFlavorParams(KalturaFlavorParams):
             watermarkData,
             subtitlesData,
             isEncrypted,
+            contentAwareness,
+            chunkedEncodeMode,
             clipOffset,
             clipDuration)
 
@@ -794,6 +829,7 @@ class KalturaSwfFlavorParams(KalturaFlavorParams):
             multiStream=NotImplemented,
             anamorphicPixels=NotImplemented,
             isAvoidForcedKeyFrames=NotImplemented,
+            forcedKeyFramesMode=NotImplemented,
             isCropIMX=NotImplemented,
             optimizationPolicy=NotImplemented,
             maxFrameRate=NotImplemented,
@@ -802,6 +838,8 @@ class KalturaSwfFlavorParams(KalturaFlavorParams):
             watermarkData=NotImplemented,
             subtitlesData=NotImplemented,
             isEncrypted=NotImplemented,
+            contentAwareness=NotImplemented,
+            chunkedEncodeMode=NotImplemented,
             clipOffset=NotImplemented,
             clipDuration=NotImplemented,
             flashVersion=NotImplemented,
@@ -847,6 +885,7 @@ class KalturaSwfFlavorParams(KalturaFlavorParams):
             multiStream,
             anamorphicPixels,
             isAvoidForcedKeyFrames,
+            forcedKeyFramesMode,
             isCropIMX,
             optimizationPolicy,
             maxFrameRate,
@@ -855,6 +894,8 @@ class KalturaSwfFlavorParams(KalturaFlavorParams):
             watermarkData,
             subtitlesData,
             isEncrypted,
+            contentAwareness,
+            chunkedEncodeMode,
             clipOffset,
             clipDuration)
 
@@ -938,6 +979,7 @@ class KalturaDocumentFlavorParamsOutput(KalturaFlavorParamsOutput):
             multiStream=NotImplemented,
             anamorphicPixels=NotImplemented,
             isAvoidForcedKeyFrames=NotImplemented,
+            forcedKeyFramesMode=NotImplemented,
             isCropIMX=NotImplemented,
             optimizationPolicy=NotImplemented,
             maxFrameRate=NotImplemented,
@@ -946,6 +988,8 @@ class KalturaDocumentFlavorParamsOutput(KalturaFlavorParamsOutput):
             watermarkData=NotImplemented,
             subtitlesData=NotImplemented,
             isEncrypted=NotImplemented,
+            contentAwareness=NotImplemented,
+            chunkedEncodeMode=NotImplemented,
             clipOffset=NotImplemented,
             clipDuration=NotImplemented,
             flavorParamsId=NotImplemented,
@@ -995,6 +1039,7 @@ class KalturaDocumentFlavorParamsOutput(KalturaFlavorParamsOutput):
             multiStream,
             anamorphicPixels,
             isAvoidForcedKeyFrames,
+            forcedKeyFramesMode,
             isCropIMX,
             optimizationPolicy,
             maxFrameRate,
@@ -1003,6 +1048,8 @@ class KalturaDocumentFlavorParamsOutput(KalturaFlavorParamsOutput):
             watermarkData,
             subtitlesData,
             isEncrypted,
+            contentAwareness,
+            chunkedEncodeMode,
             clipOffset,
             clipDuration,
             flavorParamsId,
@@ -1070,6 +1117,7 @@ class KalturaImageFlavorParamsOutput(KalturaFlavorParamsOutput):
             multiStream=NotImplemented,
             anamorphicPixels=NotImplemented,
             isAvoidForcedKeyFrames=NotImplemented,
+            forcedKeyFramesMode=NotImplemented,
             isCropIMX=NotImplemented,
             optimizationPolicy=NotImplemented,
             maxFrameRate=NotImplemented,
@@ -1078,6 +1126,8 @@ class KalturaImageFlavorParamsOutput(KalturaFlavorParamsOutput):
             watermarkData=NotImplemented,
             subtitlesData=NotImplemented,
             isEncrypted=NotImplemented,
+            contentAwareness=NotImplemented,
+            chunkedEncodeMode=NotImplemented,
             clipOffset=NotImplemented,
             clipDuration=NotImplemented,
             flavorParamsId=NotImplemented,
@@ -1132,6 +1182,7 @@ class KalturaImageFlavorParamsOutput(KalturaFlavorParamsOutput):
             multiStream,
             anamorphicPixels,
             isAvoidForcedKeyFrames,
+            forcedKeyFramesMode,
             isCropIMX,
             optimizationPolicy,
             maxFrameRate,
@@ -1140,6 +1191,8 @@ class KalturaImageFlavorParamsOutput(KalturaFlavorParamsOutput):
             watermarkData,
             subtitlesData,
             isEncrypted,
+            contentAwareness,
+            chunkedEncodeMode,
             clipOffset,
             clipDuration,
             flavorParamsId,
@@ -1262,6 +1315,7 @@ class KalturaPdfFlavorParamsOutput(KalturaFlavorParamsOutput):
             multiStream=NotImplemented,
             anamorphicPixels=NotImplemented,
             isAvoidForcedKeyFrames=NotImplemented,
+            forcedKeyFramesMode=NotImplemented,
             isCropIMX=NotImplemented,
             optimizationPolicy=NotImplemented,
             maxFrameRate=NotImplemented,
@@ -1270,6 +1324,8 @@ class KalturaPdfFlavorParamsOutput(KalturaFlavorParamsOutput):
             watermarkData=NotImplemented,
             subtitlesData=NotImplemented,
             isEncrypted=NotImplemented,
+            contentAwareness=NotImplemented,
+            chunkedEncodeMode=NotImplemented,
             clipOffset=NotImplemented,
             clipDuration=NotImplemented,
             flavorParamsId=NotImplemented,
@@ -1320,6 +1376,7 @@ class KalturaPdfFlavorParamsOutput(KalturaFlavorParamsOutput):
             multiStream,
             anamorphicPixels,
             isAvoidForcedKeyFrames,
+            forcedKeyFramesMode,
             isCropIMX,
             optimizationPolicy,
             maxFrameRate,
@@ -1328,6 +1385,8 @@ class KalturaPdfFlavorParamsOutput(KalturaFlavorParamsOutput):
             watermarkData,
             subtitlesData,
             isEncrypted,
+            contentAwareness,
+            chunkedEncodeMode,
             clipOffset,
             clipDuration,
             flavorParamsId,
@@ -1406,6 +1465,7 @@ class KalturaSwfFlavorParamsOutput(KalturaFlavorParamsOutput):
             multiStream=NotImplemented,
             anamorphicPixels=NotImplemented,
             isAvoidForcedKeyFrames=NotImplemented,
+            forcedKeyFramesMode=NotImplemented,
             isCropIMX=NotImplemented,
             optimizationPolicy=NotImplemented,
             maxFrameRate=NotImplemented,
@@ -1414,6 +1474,8 @@ class KalturaSwfFlavorParamsOutput(KalturaFlavorParamsOutput):
             watermarkData=NotImplemented,
             subtitlesData=NotImplemented,
             isEncrypted=NotImplemented,
+            contentAwareness=NotImplemented,
+            chunkedEncodeMode=NotImplemented,
             clipOffset=NotImplemented,
             clipDuration=NotImplemented,
             flavorParamsId=NotImplemented,
@@ -1465,6 +1527,7 @@ class KalturaSwfFlavorParamsOutput(KalturaFlavorParamsOutput):
             multiStream,
             anamorphicPixels,
             isAvoidForcedKeyFrames,
+            forcedKeyFramesMode,
             isCropIMX,
             optimizationPolicy,
             maxFrameRate,
@@ -1473,6 +1536,8 @@ class KalturaSwfFlavorParamsOutput(KalturaFlavorParamsOutput):
             watermarkData,
             subtitlesData,
             isEncrypted,
+            contentAwareness,
+            chunkedEncodeMode,
             clipOffset,
             clipDuration,
             flavorParamsId,
@@ -1535,6 +1600,7 @@ class KalturaDocumentEntryBaseFilter(KalturaBaseEntryFilter):
             partnerIdIn=NotImplemented,
             userIdEqual=NotImplemented,
             userIdIn=NotImplemented,
+            userIdNotIn=NotImplemented,
             creatorIdEqual=NotImplemented,
             tagsLike=NotImplemented,
             tagsMultiLikeOr=NotImplemented,
@@ -1595,6 +1661,8 @@ class KalturaDocumentEntryBaseFilter(KalturaBaseEntryFilter):
             entitledUsersEditMatchOr=NotImplemented,
             entitledUsersPublishMatchAnd=NotImplemented,
             entitledUsersPublishMatchOr=NotImplemented,
+            entitledUsersViewMatchAnd=NotImplemented,
+            entitledUsersViewMatchOr=NotImplemented,
             tagsNameMultiLikeOr=NotImplemented,
             tagsAdminTagsMultiLikeOr=NotImplemented,
             tagsAdminTagsNameMultiLikeOr=NotImplemented,
@@ -1624,6 +1692,7 @@ class KalturaDocumentEntryBaseFilter(KalturaBaseEntryFilter):
             partnerIdIn,
             userIdEqual,
             userIdIn,
+            userIdNotIn,
             creatorIdEqual,
             tagsLike,
             tagsMultiLikeOr,
@@ -1684,6 +1753,8 @@ class KalturaDocumentEntryBaseFilter(KalturaBaseEntryFilter):
             entitledUsersEditMatchOr,
             entitledUsersPublishMatchAnd,
             entitledUsersPublishMatchOr,
+            entitledUsersViewMatchAnd,
+            entitledUsersViewMatchOr,
             tagsNameMultiLikeOr,
             tagsAdminTagsMultiLikeOr,
             tagsAdminTagsNameMultiLikeOr,
@@ -1771,6 +1842,7 @@ class KalturaDocumentEntryFilter(KalturaDocumentEntryBaseFilter):
             partnerIdIn=NotImplemented,
             userIdEqual=NotImplemented,
             userIdIn=NotImplemented,
+            userIdNotIn=NotImplemented,
             creatorIdEqual=NotImplemented,
             tagsLike=NotImplemented,
             tagsMultiLikeOr=NotImplemented,
@@ -1831,6 +1903,8 @@ class KalturaDocumentEntryFilter(KalturaDocumentEntryBaseFilter):
             entitledUsersEditMatchOr=NotImplemented,
             entitledUsersPublishMatchAnd=NotImplemented,
             entitledUsersPublishMatchOr=NotImplemented,
+            entitledUsersViewMatchAnd=NotImplemented,
+            entitledUsersViewMatchOr=NotImplemented,
             tagsNameMultiLikeOr=NotImplemented,
             tagsAdminTagsMultiLikeOr=NotImplemented,
             tagsAdminTagsNameMultiLikeOr=NotImplemented,
@@ -1860,6 +1934,7 @@ class KalturaDocumentEntryFilter(KalturaDocumentEntryBaseFilter):
             partnerIdIn,
             userIdEqual,
             userIdIn,
+            userIdNotIn,
             creatorIdEqual,
             tagsLike,
             tagsMultiLikeOr,
@@ -1920,6 +1995,8 @@ class KalturaDocumentEntryFilter(KalturaDocumentEntryBaseFilter):
             entitledUsersEditMatchOr,
             entitledUsersPublishMatchAnd,
             entitledUsersPublishMatchOr,
+            entitledUsersViewMatchAnd,
+            entitledUsersViewMatchOr,
             tagsNameMultiLikeOr,
             tagsAdminTagsMultiLikeOr,
             tagsAdminTagsNameMultiLikeOr,
@@ -1956,6 +2033,8 @@ class KalturaDocumentFlavorParamsBaseFilter(KalturaFlavorParamsFilter):
     def __init__(self,
             orderBy=NotImplemented,
             advancedSearch=NotImplemented,
+            idEqual=NotImplemented,
+            idIn=NotImplemented,
             systemNameEqual=NotImplemented,
             systemNameIn=NotImplemented,
             isSystemDefaultEqual=NotImplemented,
@@ -1964,6 +2043,8 @@ class KalturaDocumentFlavorParamsBaseFilter(KalturaFlavorParamsFilter):
         KalturaFlavorParamsFilter.__init__(self,
             orderBy,
             advancedSearch,
+            idEqual,
+            idIn,
             systemNameEqual,
             systemNameIn,
             isSystemDefaultEqual,
@@ -1990,6 +2071,8 @@ class KalturaImageFlavorParamsBaseFilter(KalturaFlavorParamsFilter):
     def __init__(self,
             orderBy=NotImplemented,
             advancedSearch=NotImplemented,
+            idEqual=NotImplemented,
+            idIn=NotImplemented,
             systemNameEqual=NotImplemented,
             systemNameIn=NotImplemented,
             isSystemDefaultEqual=NotImplemented,
@@ -1998,6 +2081,8 @@ class KalturaImageFlavorParamsBaseFilter(KalturaFlavorParamsFilter):
         KalturaFlavorParamsFilter.__init__(self,
             orderBy,
             advancedSearch,
+            idEqual,
+            idIn,
             systemNameEqual,
             systemNameIn,
             isSystemDefaultEqual,
@@ -2024,6 +2109,8 @@ class KalturaPdfFlavorParamsBaseFilter(KalturaFlavorParamsFilter):
     def __init__(self,
             orderBy=NotImplemented,
             advancedSearch=NotImplemented,
+            idEqual=NotImplemented,
+            idIn=NotImplemented,
             systemNameEqual=NotImplemented,
             systemNameIn=NotImplemented,
             isSystemDefaultEqual=NotImplemented,
@@ -2032,6 +2119,8 @@ class KalturaPdfFlavorParamsBaseFilter(KalturaFlavorParamsFilter):
         KalturaFlavorParamsFilter.__init__(self,
             orderBy,
             advancedSearch,
+            idEqual,
+            idIn,
             systemNameEqual,
             systemNameIn,
             isSystemDefaultEqual,
@@ -2058,6 +2147,8 @@ class KalturaSwfFlavorParamsBaseFilter(KalturaFlavorParamsFilter):
     def __init__(self,
             orderBy=NotImplemented,
             advancedSearch=NotImplemented,
+            idEqual=NotImplemented,
+            idIn=NotImplemented,
             systemNameEqual=NotImplemented,
             systemNameIn=NotImplemented,
             isSystemDefaultEqual=NotImplemented,
@@ -2066,6 +2157,8 @@ class KalturaSwfFlavorParamsBaseFilter(KalturaFlavorParamsFilter):
         KalturaFlavorParamsFilter.__init__(self,
             orderBy,
             advancedSearch,
+            idEqual,
+            idIn,
             systemNameEqual,
             systemNameIn,
             isSystemDefaultEqual,
@@ -2092,6 +2185,8 @@ class KalturaDocumentFlavorParamsFilter(KalturaDocumentFlavorParamsBaseFilter):
     def __init__(self,
             orderBy=NotImplemented,
             advancedSearch=NotImplemented,
+            idEqual=NotImplemented,
+            idIn=NotImplemented,
             systemNameEqual=NotImplemented,
             systemNameIn=NotImplemented,
             isSystemDefaultEqual=NotImplemented,
@@ -2100,6 +2195,8 @@ class KalturaDocumentFlavorParamsFilter(KalturaDocumentFlavorParamsBaseFilter):
         KalturaDocumentFlavorParamsBaseFilter.__init__(self,
             orderBy,
             advancedSearch,
+            idEqual,
+            idIn,
             systemNameEqual,
             systemNameIn,
             isSystemDefaultEqual,
@@ -2126,6 +2223,8 @@ class KalturaImageFlavorParamsFilter(KalturaImageFlavorParamsBaseFilter):
     def __init__(self,
             orderBy=NotImplemented,
             advancedSearch=NotImplemented,
+            idEqual=NotImplemented,
+            idIn=NotImplemented,
             systemNameEqual=NotImplemented,
             systemNameIn=NotImplemented,
             isSystemDefaultEqual=NotImplemented,
@@ -2134,6 +2233,8 @@ class KalturaImageFlavorParamsFilter(KalturaImageFlavorParamsBaseFilter):
         KalturaImageFlavorParamsBaseFilter.__init__(self,
             orderBy,
             advancedSearch,
+            idEqual,
+            idIn,
             systemNameEqual,
             systemNameIn,
             isSystemDefaultEqual,
@@ -2160,6 +2261,8 @@ class KalturaPdfFlavorParamsFilter(KalturaPdfFlavorParamsBaseFilter):
     def __init__(self,
             orderBy=NotImplemented,
             advancedSearch=NotImplemented,
+            idEqual=NotImplemented,
+            idIn=NotImplemented,
             systemNameEqual=NotImplemented,
             systemNameIn=NotImplemented,
             isSystemDefaultEqual=NotImplemented,
@@ -2168,6 +2271,8 @@ class KalturaPdfFlavorParamsFilter(KalturaPdfFlavorParamsBaseFilter):
         KalturaPdfFlavorParamsBaseFilter.__init__(self,
             orderBy,
             advancedSearch,
+            idEqual,
+            idIn,
             systemNameEqual,
             systemNameIn,
             isSystemDefaultEqual,
@@ -2194,6 +2299,8 @@ class KalturaSwfFlavorParamsFilter(KalturaSwfFlavorParamsBaseFilter):
     def __init__(self,
             orderBy=NotImplemented,
             advancedSearch=NotImplemented,
+            idEqual=NotImplemented,
+            idIn=NotImplemented,
             systemNameEqual=NotImplemented,
             systemNameIn=NotImplemented,
             isSystemDefaultEqual=NotImplemented,
@@ -2202,6 +2309,8 @@ class KalturaSwfFlavorParamsFilter(KalturaSwfFlavorParamsBaseFilter):
         KalturaSwfFlavorParamsBaseFilter.__init__(self,
             orderBy,
             advancedSearch,
+            idEqual,
+            idIn,
             systemNameEqual,
             systemNameIn,
             isSystemDefaultEqual,
@@ -2228,6 +2337,8 @@ class KalturaDocumentFlavorParamsOutputBaseFilter(KalturaFlavorParamsOutputFilte
     def __init__(self,
             orderBy=NotImplemented,
             advancedSearch=NotImplemented,
+            idEqual=NotImplemented,
+            idIn=NotImplemented,
             systemNameEqual=NotImplemented,
             systemNameIn=NotImplemented,
             isSystemDefaultEqual=NotImplemented,
@@ -2240,6 +2351,8 @@ class KalturaDocumentFlavorParamsOutputBaseFilter(KalturaFlavorParamsOutputFilte
         KalturaFlavorParamsOutputFilter.__init__(self,
             orderBy,
             advancedSearch,
+            idEqual,
+            idIn,
             systemNameEqual,
             systemNameIn,
             isSystemDefaultEqual,
@@ -2270,6 +2383,8 @@ class KalturaImageFlavorParamsOutputBaseFilter(KalturaFlavorParamsOutputFilter):
     def __init__(self,
             orderBy=NotImplemented,
             advancedSearch=NotImplemented,
+            idEqual=NotImplemented,
+            idIn=NotImplemented,
             systemNameEqual=NotImplemented,
             systemNameIn=NotImplemented,
             isSystemDefaultEqual=NotImplemented,
@@ -2282,6 +2397,8 @@ class KalturaImageFlavorParamsOutputBaseFilter(KalturaFlavorParamsOutputFilter):
         KalturaFlavorParamsOutputFilter.__init__(self,
             orderBy,
             advancedSearch,
+            idEqual,
+            idIn,
             systemNameEqual,
             systemNameIn,
             isSystemDefaultEqual,
@@ -2312,6 +2429,8 @@ class KalturaPdfFlavorParamsOutputBaseFilter(KalturaFlavorParamsOutputFilter):
     def __init__(self,
             orderBy=NotImplemented,
             advancedSearch=NotImplemented,
+            idEqual=NotImplemented,
+            idIn=NotImplemented,
             systemNameEqual=NotImplemented,
             systemNameIn=NotImplemented,
             isSystemDefaultEqual=NotImplemented,
@@ -2324,6 +2443,8 @@ class KalturaPdfFlavorParamsOutputBaseFilter(KalturaFlavorParamsOutputFilter):
         KalturaFlavorParamsOutputFilter.__init__(self,
             orderBy,
             advancedSearch,
+            idEqual,
+            idIn,
             systemNameEqual,
             systemNameIn,
             isSystemDefaultEqual,
@@ -2354,6 +2475,8 @@ class KalturaSwfFlavorParamsOutputBaseFilter(KalturaFlavorParamsOutputFilter):
     def __init__(self,
             orderBy=NotImplemented,
             advancedSearch=NotImplemented,
+            idEqual=NotImplemented,
+            idIn=NotImplemented,
             systemNameEqual=NotImplemented,
             systemNameIn=NotImplemented,
             isSystemDefaultEqual=NotImplemented,
@@ -2366,6 +2489,8 @@ class KalturaSwfFlavorParamsOutputBaseFilter(KalturaFlavorParamsOutputFilter):
         KalturaFlavorParamsOutputFilter.__init__(self,
             orderBy,
             advancedSearch,
+            idEqual,
+            idIn,
             systemNameEqual,
             systemNameIn,
             isSystemDefaultEqual,
@@ -2396,6 +2521,8 @@ class KalturaDocumentFlavorParamsOutputFilter(KalturaDocumentFlavorParamsOutputB
     def __init__(self,
             orderBy=NotImplemented,
             advancedSearch=NotImplemented,
+            idEqual=NotImplemented,
+            idIn=NotImplemented,
             systemNameEqual=NotImplemented,
             systemNameIn=NotImplemented,
             isSystemDefaultEqual=NotImplemented,
@@ -2408,6 +2535,8 @@ class KalturaDocumentFlavorParamsOutputFilter(KalturaDocumentFlavorParamsOutputB
         KalturaDocumentFlavorParamsOutputBaseFilter.__init__(self,
             orderBy,
             advancedSearch,
+            idEqual,
+            idIn,
             systemNameEqual,
             systemNameIn,
             isSystemDefaultEqual,
@@ -2438,6 +2567,8 @@ class KalturaImageFlavorParamsOutputFilter(KalturaImageFlavorParamsOutputBaseFil
     def __init__(self,
             orderBy=NotImplemented,
             advancedSearch=NotImplemented,
+            idEqual=NotImplemented,
+            idIn=NotImplemented,
             systemNameEqual=NotImplemented,
             systemNameIn=NotImplemented,
             isSystemDefaultEqual=NotImplemented,
@@ -2450,6 +2581,8 @@ class KalturaImageFlavorParamsOutputFilter(KalturaImageFlavorParamsOutputBaseFil
         KalturaImageFlavorParamsOutputBaseFilter.__init__(self,
             orderBy,
             advancedSearch,
+            idEqual,
+            idIn,
             systemNameEqual,
             systemNameIn,
             isSystemDefaultEqual,
@@ -2480,6 +2613,8 @@ class KalturaPdfFlavorParamsOutputFilter(KalturaPdfFlavorParamsOutputBaseFilter)
     def __init__(self,
             orderBy=NotImplemented,
             advancedSearch=NotImplemented,
+            idEqual=NotImplemented,
+            idIn=NotImplemented,
             systemNameEqual=NotImplemented,
             systemNameIn=NotImplemented,
             isSystemDefaultEqual=NotImplemented,
@@ -2492,6 +2627,8 @@ class KalturaPdfFlavorParamsOutputFilter(KalturaPdfFlavorParamsOutputBaseFilter)
         KalturaPdfFlavorParamsOutputBaseFilter.__init__(self,
             orderBy,
             advancedSearch,
+            idEqual,
+            idIn,
             systemNameEqual,
             systemNameIn,
             isSystemDefaultEqual,
@@ -2522,6 +2659,8 @@ class KalturaSwfFlavorParamsOutputFilter(KalturaSwfFlavorParamsOutputBaseFilter)
     def __init__(self,
             orderBy=NotImplemented,
             advancedSearch=NotImplemented,
+            idEqual=NotImplemented,
+            idIn=NotImplemented,
             systemNameEqual=NotImplemented,
             systemNameIn=NotImplemented,
             isSystemDefaultEqual=NotImplemented,
@@ -2534,6 +2673,8 @@ class KalturaSwfFlavorParamsOutputFilter(KalturaSwfFlavorParamsOutputBaseFilter)
         KalturaSwfFlavorParamsOutputBaseFilter.__init__(self,
             orderBy,
             advancedSearch,
+            idEqual,
+            idIn,
             systemNameEqual,
             systemNameIn,
             isSystemDefaultEqual,
@@ -2568,18 +2709,6 @@ class KalturaDocumentsService(KalturaServiceBase):
     def __init__(self, client = None):
         KalturaServiceBase.__init__(self, client)
 
-    def addFromUploadedFile(self, documentEntry, uploadTokenId):
-        """Add new document entry after the specific document file was uploaded and the upload token id exists"""
-
-        kparams = KalturaParams()
-        kparams.addObjectIfDefined("documentEntry", documentEntry)
-        kparams.addStringIfDefined("uploadTokenId", uploadTokenId)
-        self.client.queueServiceActionCall("document_documents", "addFromUploadedFile", KalturaDocumentEntry, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaDocumentEntry)
-
     def addFromEntry(self, sourceEntryId, documentEntry = NotImplemented, sourceFlavorParamsId = NotImplemented):
         """Copy entry into new entry"""
 
@@ -2587,11 +2716,11 @@ class KalturaDocumentsService(KalturaServiceBase):
         kparams.addStringIfDefined("sourceEntryId", sourceEntryId)
         kparams.addObjectIfDefined("documentEntry", documentEntry)
         kparams.addIntIfDefined("sourceFlavorParamsId", sourceFlavorParamsId);
-        self.client.queueServiceActionCall("document_documents", "addFromEntry", KalturaDocumentEntry, kparams)
+        self.client.queueServiceActionCall("document_documents", "addFromEntry", "KalturaDocumentEntry", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaDocumentEntry)
+        return KalturaObjectFactory.create(resultNode, 'KalturaDocumentEntry')
 
     def addFromFlavorAsset(self, sourceFlavorAssetId, documentEntry = NotImplemented):
         """Copy flavor asset into new entry"""
@@ -2599,11 +2728,45 @@ class KalturaDocumentsService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addStringIfDefined("sourceFlavorAssetId", sourceFlavorAssetId)
         kparams.addObjectIfDefined("documentEntry", documentEntry)
-        self.client.queueServiceActionCall("document_documents", "addFromFlavorAsset", KalturaDocumentEntry, kparams)
+        self.client.queueServiceActionCall("document_documents", "addFromFlavorAsset", "KalturaDocumentEntry", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaDocumentEntry)
+        return KalturaObjectFactory.create(resultNode, 'KalturaDocumentEntry')
+
+    def addFromUploadedFile(self, documentEntry, uploadTokenId):
+        """Add new document entry after the specific document file was uploaded and the upload token id exists"""
+
+        kparams = KalturaParams()
+        kparams.addObjectIfDefined("documentEntry", documentEntry)
+        kparams.addStringIfDefined("uploadTokenId", uploadTokenId)
+        self.client.queueServiceActionCall("document_documents", "addFromUploadedFile", "KalturaDocumentEntry", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaDocumentEntry')
+
+    def approveReplace(self, entryId):
+        """Approves document replacement"""
+
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("entryId", entryId)
+        self.client.queueServiceActionCall("document_documents", "approveReplace", "KalturaDocumentEntry", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaDocumentEntry')
+
+    def cancelReplace(self, entryId):
+        """Cancels document replacement"""
+
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("entryId", entryId)
+        self.client.queueServiceActionCall("document_documents", "cancelReplace", "KalturaDocumentEntry", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaDocumentEntry')
 
     def convert(self, entryId, conversionProfileId = NotImplemented, dynamicConversionAttributes = NotImplemented):
         """Convert entry"""
@@ -2612,69 +2775,11 @@ class KalturaDocumentsService(KalturaServiceBase):
         kparams.addStringIfDefined("entryId", entryId)
         kparams.addIntIfDefined("conversionProfileId", conversionProfileId);
         kparams.addArrayIfDefined("dynamicConversionAttributes", dynamicConversionAttributes)
-        self.client.queueServiceActionCall("document_documents", "convert", None, kparams)
+        self.client.queueServiceActionCall("document_documents", "convert", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
         return getXmlNodeInt(resultNode)
-
-    def get(self, entryId, version = -1):
-        """Get document entry by ID."""
-
-        kparams = KalturaParams()
-        kparams.addStringIfDefined("entryId", entryId)
-        kparams.addIntIfDefined("version", version);
-        self.client.queueServiceActionCall("document_documents", "get", KalturaDocumentEntry, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaDocumentEntry)
-
-    def update(self, entryId, documentEntry):
-        """Update document entry. Only the properties that were set will be updated."""
-
-        kparams = KalturaParams()
-        kparams.addStringIfDefined("entryId", entryId)
-        kparams.addObjectIfDefined("documentEntry", documentEntry)
-        self.client.queueServiceActionCall("document_documents", "update", KalturaDocumentEntry, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaDocumentEntry)
-
-    def delete(self, entryId):
-        """Delete a document entry."""
-
-        kparams = KalturaParams()
-        kparams.addStringIfDefined("entryId", entryId)
-        self.client.queueServiceActionCall("document_documents", "delete", None, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-
-    def list(self, filter = NotImplemented, pager = NotImplemented):
-        """List document entries by filter with paging support."""
-
-        kparams = KalturaParams()
-        kparams.addObjectIfDefined("filter", filter)
-        kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall("document_documents", "list", KalturaDocumentListResponse, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaDocumentListResponse)
-
-    def upload(self, fileData):
-        """Upload a document file to Kaltura, then the file can be used to create a document entry."""
-
-        kparams = KalturaParams()
-        kfiles = KalturaFiles()
-        kfiles.put("fileData", fileData);
-        self.client.queueServiceActionCall("document_documents", "upload", None, kparams, kfiles)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return getXmlNodeText(resultNode)
 
     def convertPptToSwf(self, entryId):
         """This will queue a batch job for converting the document file to swf
@@ -2682,11 +2787,45 @@ class KalturaDocumentsService(KalturaServiceBase):
 
         kparams = KalturaParams()
         kparams.addStringIfDefined("entryId", entryId)
-        self.client.queueServiceActionCall("document_documents", "convertPptToSwf", None, kparams)
+        self.client.queueServiceActionCall("document_documents", "convertPptToSwf", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
         return getXmlNodeText(resultNode)
+
+    def delete(self, entryId):
+        """Delete a document entry."""
+
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("entryId", entryId)
+        self.client.queueServiceActionCall("document_documents", "delete", "None", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+
+    def get(self, entryId, version = -1):
+        """Get document entry by ID."""
+
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("entryId", entryId)
+        kparams.addIntIfDefined("version", version);
+        self.client.queueServiceActionCall("document_documents", "get", "KalturaDocumentEntry", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaDocumentEntry')
+
+    def list(self, filter = NotImplemented, pager = NotImplemented):
+        """List document entries by filter with paging support."""
+
+        kparams = KalturaParams()
+        kparams.addObjectIfDefined("filter", filter)
+        kparams.addObjectIfDefined("pager", pager)
+        self.client.queueServiceActionCall("document_documents", "list", "KalturaDocumentListResponse", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaDocumentListResponse')
 
     def serve(self, entryId, flavorAssetId = NotImplemented, forceProxy = False):
         """Serves the file content"""
@@ -2708,6 +2847,18 @@ class KalturaDocumentsService(KalturaServiceBase):
         self.client.queueServiceActionCall('document_documents', 'serveByFlavorParamsId', None ,kparams)
         return self.client.getServeUrl()
 
+    def update(self, entryId, documentEntry):
+        """Update document entry. Only the properties that were set will be updated."""
+
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("entryId", entryId)
+        kparams.addObjectIfDefined("documentEntry", documentEntry)
+        self.client.queueServiceActionCall("document_documents", "update", "KalturaDocumentEntry", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaDocumentEntry')
+
     def updateContent(self, entryId, resource, conversionProfileId = NotImplemented):
         """Replace content associated with the given document entry."""
 
@@ -2715,33 +2866,22 @@ class KalturaDocumentsService(KalturaServiceBase):
         kparams.addStringIfDefined("entryId", entryId)
         kparams.addObjectIfDefined("resource", resource)
         kparams.addIntIfDefined("conversionProfileId", conversionProfileId);
-        self.client.queueServiceActionCall("document_documents", "updateContent", KalturaDocumentEntry, kparams)
+        self.client.queueServiceActionCall("document_documents", "updateContent", "KalturaDocumentEntry", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaDocumentEntry)
+        return KalturaObjectFactory.create(resultNode, 'KalturaDocumentEntry')
 
-    def approveReplace(self, entryId):
-        """Approves document replacement"""
+    def upload(self, fileData):
+        """Upload a document file to Kaltura, then the file can be used to create a document entry."""
 
         kparams = KalturaParams()
-        kparams.addStringIfDefined("entryId", entryId)
-        self.client.queueServiceActionCall("document_documents", "approveReplace", KalturaDocumentEntry, kparams)
+        kfiles = {"fileData": fileData}
+        self.client.queueServiceActionCall("document_documents", "upload", "None", kparams, kfiles)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaDocumentEntry)
-
-    def cancelReplace(self, entryId):
-        """Cancels document replacement"""
-
-        kparams = KalturaParams()
-        kparams.addStringIfDefined("entryId", entryId)
-        self.client.queueServiceActionCall("document_documents", "cancelReplace", KalturaDocumentEntry, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaDocumentEntry)
+        return getXmlNodeText(resultNode)
 
 ########## main ##########
 class KalturaDocumentClientPlugin(KalturaClientPlugin):
@@ -2758,6 +2898,7 @@ class KalturaDocumentClientPlugin(KalturaClientPlugin):
     # @return array<KalturaServiceBase>
     def getServices(self):
         return {
+            'documents': KalturaDocumentsService,
         }
 
     def getEnums(self):

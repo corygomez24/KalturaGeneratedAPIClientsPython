@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,8 +27,21 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -131,8 +144,10 @@ class KalturaExternalMediaEntry(KalturaMediaEntry):
             operationAttributes=NotImplemented,
             entitledUsersEdit=NotImplemented,
             entitledUsersPublish=NotImplemented,
+            entitledUsersView=NotImplemented,
             capabilities=NotImplemented,
             templateEntryId=NotImplemented,
+            displayInSearch=NotImplemented,
             plays=NotImplemented,
             views=NotImplemented,
             lastPlayedAt=NotImplemented,
@@ -152,6 +167,7 @@ class KalturaExternalMediaEntry(KalturaMediaEntry):
             dataUrl=NotImplemented,
             flavorParamsIds=NotImplemented,
             isTrimDisabled=NotImplemented,
+            streams=NotImplemented,
             externalSourceType=NotImplemented,
             assetParamsIds=NotImplemented):
         KalturaMediaEntry.__init__(self,
@@ -196,8 +212,10 @@ class KalturaExternalMediaEntry(KalturaMediaEntry):
             operationAttributes,
             entitledUsersEdit,
             entitledUsersPublish,
+            entitledUsersView,
             capabilities,
             templateEntryId,
+            displayInSearch,
             plays,
             views,
             lastPlayedAt,
@@ -216,7 +234,8 @@ class KalturaExternalMediaEntry(KalturaMediaEntry):
             mediaDate,
             dataUrl,
             flavorParamsIds,
-            isTrimDisabled)
+            isTrimDisabled,
+            streams)
 
         # The source type of the external media
         # @var KalturaExternalMediaSourceType
@@ -269,7 +288,7 @@ class KalturaExternalMediaEntryListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'objects': (KalturaObjectFactory.createArray, KalturaExternalMediaEntry), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaExternalMediaEntry'), 
     }
 
     def fromXml(self, node):
@@ -302,6 +321,7 @@ class KalturaExternalMediaEntryBaseFilter(KalturaMediaEntryFilter):
             partnerIdIn=NotImplemented,
             userIdEqual=NotImplemented,
             userIdIn=NotImplemented,
+            userIdNotIn=NotImplemented,
             creatorIdEqual=NotImplemented,
             tagsLike=NotImplemented,
             tagsMultiLikeOr=NotImplemented,
@@ -362,6 +382,8 @@ class KalturaExternalMediaEntryBaseFilter(KalturaMediaEntryFilter):
             entitledUsersEditMatchOr=NotImplemented,
             entitledUsersPublishMatchAnd=NotImplemented,
             entitledUsersPublishMatchOr=NotImplemented,
+            entitledUsersViewMatchAnd=NotImplemented,
+            entitledUsersViewMatchOr=NotImplemented,
             tagsNameMultiLikeOr=NotImplemented,
             tagsAdminTagsMultiLikeOr=NotImplemented,
             tagsAdminTagsNameMultiLikeOr=NotImplemented,
@@ -408,6 +430,7 @@ class KalturaExternalMediaEntryBaseFilter(KalturaMediaEntryFilter):
             partnerIdIn,
             userIdEqual,
             userIdIn,
+            userIdNotIn,
             creatorIdEqual,
             tagsLike,
             tagsMultiLikeOr,
@@ -468,6 +491,8 @@ class KalturaExternalMediaEntryBaseFilter(KalturaMediaEntryFilter):
             entitledUsersEditMatchOr,
             entitledUsersPublishMatchAnd,
             entitledUsersPublishMatchOr,
+            entitledUsersViewMatchAnd,
+            entitledUsersViewMatchOr,
             tagsNameMultiLikeOr,
             tagsAdminTagsMultiLikeOr,
             tagsAdminTagsNameMultiLikeOr,
@@ -572,6 +597,7 @@ class KalturaExternalMediaEntryFilter(KalturaExternalMediaEntryBaseFilter):
             partnerIdIn=NotImplemented,
             userIdEqual=NotImplemented,
             userIdIn=NotImplemented,
+            userIdNotIn=NotImplemented,
             creatorIdEqual=NotImplemented,
             tagsLike=NotImplemented,
             tagsMultiLikeOr=NotImplemented,
@@ -632,6 +658,8 @@ class KalturaExternalMediaEntryFilter(KalturaExternalMediaEntryBaseFilter):
             entitledUsersEditMatchOr=NotImplemented,
             entitledUsersPublishMatchAnd=NotImplemented,
             entitledUsersPublishMatchOr=NotImplemented,
+            entitledUsersViewMatchAnd=NotImplemented,
+            entitledUsersViewMatchOr=NotImplemented,
             tagsNameMultiLikeOr=NotImplemented,
             tagsAdminTagsMultiLikeOr=NotImplemented,
             tagsAdminTagsNameMultiLikeOr=NotImplemented,
@@ -678,6 +706,7 @@ class KalturaExternalMediaEntryFilter(KalturaExternalMediaEntryBaseFilter):
             partnerIdIn,
             userIdEqual,
             userIdIn,
+            userIdNotIn,
             creatorIdEqual,
             tagsLike,
             tagsMultiLikeOr,
@@ -738,6 +767,8 @@ class KalturaExternalMediaEntryFilter(KalturaExternalMediaEntryBaseFilter):
             entitledUsersEditMatchOr,
             entitledUsersPublishMatchAnd,
             entitledUsersPublishMatchOr,
+            entitledUsersViewMatchAnd,
+            entitledUsersViewMatchOr,
             tagsNameMultiLikeOr,
             tagsAdminTagsMultiLikeOr,
             tagsAdminTagsNameMultiLikeOr,
@@ -800,44 +831,43 @@ class KalturaExternalMediaService(KalturaServiceBase):
 
         kparams = KalturaParams()
         kparams.addObjectIfDefined("entry", entry)
-        self.client.queueServiceActionCall("externalmedia_externalmedia", "add", KalturaExternalMediaEntry, kparams)
+        self.client.queueServiceActionCall("externalmedia_externalmedia", "add", "KalturaExternalMediaEntry", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaExternalMediaEntry)
+        return KalturaObjectFactory.create(resultNode, 'KalturaExternalMediaEntry')
 
-    def get(self, id):
-        """Get external media entry by ID."""
+    def count(self, filter = NotImplemented):
+        """Count media entries by filter."""
 
         kparams = KalturaParams()
-        kparams.addStringIfDefined("id", id)
-        self.client.queueServiceActionCall("externalmedia_externalmedia", "get", KalturaExternalMediaEntry, kparams)
+        kparams.addObjectIfDefined("filter", filter)
+        self.client.queueServiceActionCall("externalmedia_externalmedia", "count", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaExternalMediaEntry)
-
-    def update(self, id, entry):
-        """Update external media entry. Only the properties that were set will be updated."""
-
-        kparams = KalturaParams()
-        kparams.addStringIfDefined("id", id)
-        kparams.addObjectIfDefined("entry", entry)
-        self.client.queueServiceActionCall("externalmedia_externalmedia", "update", KalturaExternalMediaEntry, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaExternalMediaEntry)
+        return getXmlNodeInt(resultNode)
 
     def delete(self, id):
         """Delete a external media entry."""
 
         kparams = KalturaParams()
         kparams.addStringIfDefined("id", id)
-        self.client.queueServiceActionCall("externalmedia_externalmedia", "delete", None, kparams)
+        self.client.queueServiceActionCall("externalmedia_externalmedia", "delete", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
+
+    def get(self, id):
+        """Get external media entry by ID."""
+
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("id", id)
+        self.client.queueServiceActionCall("externalmedia_externalmedia", "get", "KalturaExternalMediaEntry", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaExternalMediaEntry')
 
     def list(self, filter = NotImplemented, pager = NotImplemented):
         """List media entries by filter with paging support."""
@@ -845,22 +875,23 @@ class KalturaExternalMediaService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addObjectIfDefined("filter", filter)
         kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall("externalmedia_externalmedia", "list", KalturaExternalMediaEntryListResponse, kparams)
+        self.client.queueServiceActionCall("externalmedia_externalmedia", "list", "KalturaExternalMediaEntryListResponse", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaExternalMediaEntryListResponse)
+        return KalturaObjectFactory.create(resultNode, 'KalturaExternalMediaEntryListResponse')
 
-    def count(self, filter = NotImplemented):
-        """Count media entries by filter."""
+    def update(self, id, entry):
+        """Update external media entry. Only the properties that were set will be updated."""
 
         kparams = KalturaParams()
-        kparams.addObjectIfDefined("filter", filter)
-        self.client.queueServiceActionCall("externalmedia_externalmedia", "count", None, kparams)
+        kparams.addStringIfDefined("id", id)
+        kparams.addObjectIfDefined("entry", entry)
+        self.client.queueServiceActionCall("externalmedia_externalmedia", "update", "KalturaExternalMediaEntry", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return getXmlNodeInt(resultNode)
+        return KalturaObjectFactory.create(resultNode, 'KalturaExternalMediaEntry')
 
 ########## main ##########
 class KalturaExternalMediaClientPlugin(KalturaClientPlugin):
@@ -877,6 +908,7 @@ class KalturaExternalMediaClientPlugin(KalturaClientPlugin):
     # @return array<KalturaServiceBase>
     def getServices(self):
         return {
+            'externalMedia': KalturaExternalMediaService,
         }
 
     def getEnums(self):

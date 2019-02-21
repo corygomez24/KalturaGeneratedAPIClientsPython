@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,9 +27,22 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from Attachment import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from .Attachment import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -43,6 +56,18 @@ class KalturaTranscriptAssetOrderBy(object):
     DELETED_AT_DESC = "-deletedAt"
     SIZE_DESC = "-size"
     UPDATED_AT_DESC = "-updatedAt"
+
+    def __init__(self, value):
+        self.value = value
+
+    def getValue(self):
+        return self.value
+
+# @package Kaltura
+# @subpackage Client
+class KalturaTranscriptProviderType(object):
+    CIELO24 = "cielo24.Cielo24"
+    VOICEBASE = "voicebase.Voicebase"
 
     def __init__(self, value):
         self.value = value
@@ -75,7 +100,8 @@ class KalturaTranscriptAsset(KalturaAttachmentAsset):
             status=NotImplemented,
             accuracy=NotImplemented,
             humanVerified=NotImplemented,
-            language=NotImplemented):
+            language=NotImplemented,
+            providerType=NotImplemented):
         KalturaAttachmentAsset.__init__(self,
             id,
             entryId,
@@ -108,11 +134,16 @@ class KalturaTranscriptAsset(KalturaAttachmentAsset):
         # @var KalturaLanguage
         self.language = language
 
+        # The provider of the transcript
+        # @var KalturaTranscriptProviderType
+        self.providerType = providerType
+
 
     PROPERTY_LOADERS = {
         'accuracy': getXmlNodeFloat, 
         'humanVerified': (KalturaEnumsFactory.createInt, "KalturaNullableBoolean"), 
         'language': (KalturaEnumsFactory.createString, "KalturaLanguage"), 
+        'providerType': (KalturaEnumsFactory.createString, "KalturaTranscriptProviderType"), 
     }
 
     def fromXml(self, node):
@@ -125,6 +156,7 @@ class KalturaTranscriptAsset(KalturaAttachmentAsset):
         kparams.addFloatIfDefined("accuracy", self.accuracy)
         kparams.addIntEnumIfDefined("humanVerified", self.humanVerified)
         kparams.addStringEnumIfDefined("language", self.language)
+        kparams.addStringEnumIfDefined("providerType", self.providerType)
         return kparams
 
     def getAccuracy(self):
@@ -144,6 +176,12 @@ class KalturaTranscriptAsset(KalturaAttachmentAsset):
 
     def setLanguage(self, newLanguage):
         self.language = newLanguage
+
+    def getProviderType(self):
+        return self.providerType
+
+    def setProviderType(self, newProviderType):
+        self.providerType = newProviderType
 
 
 # @package Kaltura
@@ -217,7 +255,7 @@ class KalturaTranscriptAssetListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'objects': (KalturaObjectFactory.createArray, KalturaTranscriptAsset), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaTranscriptAsset'), 
     }
 
     def fromXml(self, node):
@@ -256,6 +294,7 @@ class KalturaTranscriptAssetBaseFilter(KalturaAttachmentAssetFilter):
             updatedAtLessThanOrEqual=NotImplemented,
             deletedAtGreaterThanOrEqual=NotImplemented,
             deletedAtLessThanOrEqual=NotImplemented,
+            typeIn=NotImplemented,
             formatEqual=NotImplemented,
             formatIn=NotImplemented,
             statusEqual=NotImplemented,
@@ -281,6 +320,7 @@ class KalturaTranscriptAssetBaseFilter(KalturaAttachmentAssetFilter):
             updatedAtLessThanOrEqual,
             deletedAtGreaterThanOrEqual,
             deletedAtLessThanOrEqual,
+            typeIn,
             formatEqual,
             formatIn,
             statusEqual,
@@ -324,6 +364,7 @@ class KalturaTranscriptAssetFilter(KalturaTranscriptAssetBaseFilter):
             updatedAtLessThanOrEqual=NotImplemented,
             deletedAtGreaterThanOrEqual=NotImplemented,
             deletedAtLessThanOrEqual=NotImplemented,
+            typeIn=NotImplemented,
             formatEqual=NotImplemented,
             formatIn=NotImplemented,
             statusEqual=NotImplemented,
@@ -349,6 +390,7 @@ class KalturaTranscriptAssetFilter(KalturaTranscriptAssetBaseFilter):
             updatedAtLessThanOrEqual,
             deletedAtGreaterThanOrEqual,
             deletedAtLessThanOrEqual,
+            typeIn,
             formatEqual,
             formatIn,
             statusEqual,
@@ -390,6 +432,7 @@ class KalturaTranscriptClientPlugin(KalturaClientPlugin):
     def getEnums(self):
         return {
             'KalturaTranscriptAssetOrderBy': KalturaTranscriptAssetOrderBy,
+            'KalturaTranscriptProviderType': KalturaTranscriptProviderType,
         }
 
     def getTypes(self):

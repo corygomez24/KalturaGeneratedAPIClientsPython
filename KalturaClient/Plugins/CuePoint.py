@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,8 +27,21 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -38,6 +51,24 @@ class KalturaCuePointStatus(object):
     DELETED = 2
     HANDLED = 3
     PENDING = 4
+
+    def __init__(self, value):
+        self.value = value
+
+    def getValue(self):
+        return self.value
+
+# @package Kaltura
+# @subpackage Client
+class KalturaQuestionType(object):
+    MULTIPLE_CHOICE_ANSWER = 1
+    TRUE_FALSE = 2
+    REFLECTION_POINT = 3
+    MULTIPLE_ANSWER_QUESTION = 4
+    FILL_IN_BLANK = 5
+    HOT_SPOT = 6
+    GO_TO = 7
+    OPEN_QUESTION = 8
 
     def __init__(self, value):
         self.value = value
@@ -125,7 +156,9 @@ class KalturaCuePoint(KalturaObjectBase):
             partnerSortValue=NotImplemented,
             forceStop=NotImplemented,
             thumbOffset=NotImplemented,
-            systemName=NotImplemented):
+            systemName=NotImplemented,
+            isMomentary=NotImplemented,
+            copiedFrom=NotImplemented):
         KalturaObjectBase.__init__(self)
 
         # @var string
@@ -185,6 +218,14 @@ class KalturaCuePoint(KalturaObjectBase):
         # @var string
         self.systemName = systemName
 
+        # @var bool
+        # @readonly
+        self.isMomentary = isMomentary
+
+        # @var string
+        # @readonly
+        self.copiedFrom = copiedFrom
+
 
     PROPERTY_LOADERS = {
         'id': getXmlNodeText, 
@@ -203,6 +244,8 @@ class KalturaCuePoint(KalturaObjectBase):
         'forceStop': (KalturaEnumsFactory.createInt, "KalturaNullableBoolean"), 
         'thumbOffset': getXmlNodeInt, 
         'systemName': getXmlNodeText, 
+        'isMomentary': getXmlNodeBool, 
+        'copiedFrom': getXmlNodeText, 
     }
 
     def fromXml(self, node):
@@ -298,6 +341,12 @@ class KalturaCuePoint(KalturaObjectBase):
     def setSystemName(self, newSystemName):
         self.systemName = newSystemName
 
+    def getIsMomentary(self):
+        return self.isMomentary
+
+    def getCopiedFrom(self):
+        return self.copiedFrom
+
 
 # @package Kaltura
 # @subpackage Client
@@ -314,7 +363,7 @@ class KalturaCuePointListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'objects': (KalturaObjectFactory.createArray, KalturaCuePoint), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaCuePoint'), 
     }
 
     def fromXml(self, node):
@@ -821,23 +870,78 @@ class KalturaCuePointService(KalturaServiceBase):
 
         kparams = KalturaParams()
         kparams.addObjectIfDefined("cuePoint", cuePoint)
-        self.client.queueServiceActionCall("cuepoint_cuepoint", "add", KalturaCuePoint, kparams)
+        self.client.queueServiceActionCall("cuepoint_cuepoint", "add", "KalturaCuePoint", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaCuePoint)
+        return KalturaObjectFactory.create(resultNode, 'KalturaCuePoint')
 
     def addFromBulk(self, fileData):
         """Allows you to add multiple cue points objects by uploading XML that contains multiple cue point definitions"""
 
         kparams = KalturaParams()
-        kfiles = KalturaFiles()
-        kfiles.put("fileData", fileData);
-        self.client.queueServiceActionCall("cuepoint_cuepoint", "addFromBulk", KalturaCuePointListResponse, kparams, kfiles)
+        kfiles = {"fileData": fileData}
+        self.client.queueServiceActionCall("cuepoint_cuepoint", "addFromBulk", "KalturaCuePointListResponse", kparams, kfiles)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaCuePointListResponse)
+        return KalturaObjectFactory.create(resultNode, 'KalturaCuePointListResponse')
+
+    def clone(self, id, entryId):
+        """Clone cuePoint with id to given entry"""
+
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("id", id)
+        kparams.addStringIfDefined("entryId", entryId)
+        self.client.queueServiceActionCall("cuepoint_cuepoint", "clone", "KalturaCuePoint", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaCuePoint')
+
+    def count(self, filter = NotImplemented):
+        """count cue point objects by filter"""
+
+        kparams = KalturaParams()
+        kparams.addObjectIfDefined("filter", filter)
+        self.client.queueServiceActionCall("cuepoint_cuepoint", "count", "None", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return getXmlNodeInt(resultNode)
+
+    def delete(self, id):
+        """delete cue point by id, and delete all children cue points"""
+
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("id", id)
+        self.client.queueServiceActionCall("cuepoint_cuepoint", "delete", "None", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+
+    def get(self, id):
+        """Retrieve an CuePoint object by id"""
+
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("id", id)
+        self.client.queueServiceActionCall("cuepoint_cuepoint", "get", "KalturaCuePoint", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaCuePoint')
+
+    def list(self, filter = NotImplemented, pager = NotImplemented):
+        """List cue point objects by filter and pager"""
+
+        kparams = KalturaParams()
+        kparams.addObjectIfDefined("filter", filter)
+        kparams.addObjectIfDefined("pager", pager)
+        self.client.queueServiceActionCall("cuepoint_cuepoint", "list", "KalturaCuePointListResponse", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaCuePointListResponse')
 
     def serveBulk(self, filter = NotImplemented, pager = NotImplemented):
         """Download multiple cue points objects as XML definitions"""
@@ -848,61 +952,28 @@ class KalturaCuePointService(KalturaServiceBase):
         self.client.queueServiceActionCall('cuepoint_cuepoint', 'serveBulk', None ,kparams)
         return self.client.getServeUrl()
 
-    def get(self, id):
-        """Retrieve an CuePoint object by id"""
-
-        kparams = KalturaParams()
-        kparams.addStringIfDefined("id", id)
-        self.client.queueServiceActionCall("cuepoint_cuepoint", "get", KalturaCuePoint, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaCuePoint)
-
-    def list(self, filter = NotImplemented, pager = NotImplemented):
-        """List cue point objects by filter and pager"""
-
-        kparams = KalturaParams()
-        kparams.addObjectIfDefined("filter", filter)
-        kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall("cuepoint_cuepoint", "list", KalturaCuePointListResponse, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaCuePointListResponse)
-
-    def count(self, filter = NotImplemented):
-        """count cue point objects by filter"""
-
-        kparams = KalturaParams()
-        kparams.addObjectIfDefined("filter", filter)
-        self.client.queueServiceActionCall("cuepoint_cuepoint", "count", None, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return getXmlNodeInt(resultNode)
-
     def update(self, id, cuePoint):
         """Update cue point by id"""
 
         kparams = KalturaParams()
         kparams.addStringIfDefined("id", id)
         kparams.addObjectIfDefined("cuePoint", cuePoint)
-        self.client.queueServiceActionCall("cuepoint_cuepoint", "update", KalturaCuePoint, kparams)
+        self.client.queueServiceActionCall("cuepoint_cuepoint", "update", "KalturaCuePoint", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaCuePoint)
+        return KalturaObjectFactory.create(resultNode, 'KalturaCuePoint')
 
-    def delete(self, id):
-        """delete cue point by id, and delete all children cue points"""
-
+    def updateCuePointsTimes(self, id, startTime, endTime = NotImplemented):
         kparams = KalturaParams()
         kparams.addStringIfDefined("id", id)
-        self.client.queueServiceActionCall("cuepoint_cuepoint", "delete", None, kparams)
+        kparams.addIntIfDefined("startTime", startTime);
+        kparams.addIntIfDefined("endTime", endTime);
+        self.client.queueServiceActionCall("cuepoint_cuepoint", "updateCuePointsTimes", "KalturaCuePoint", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaCuePoint')
 
     def updateStatus(self, id, status):
         """Update cuePoint status by id"""
@@ -910,7 +981,7 @@ class KalturaCuePointService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addStringIfDefined("id", id)
         kparams.addIntIfDefined("status", status);
-        self.client.queueServiceActionCall("cuepoint_cuepoint", "updateStatus", None, kparams)
+        self.client.queueServiceActionCall("cuepoint_cuepoint", "updateStatus", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
@@ -930,12 +1001,13 @@ class KalturaCuePointClientPlugin(KalturaClientPlugin):
     # @return array<KalturaServiceBase>
     def getServices(self):
         return {
+            'cuePoint': KalturaCuePointService,
         }
 
     def getEnums(self):
         return {
             'KalturaCuePointStatus': KalturaCuePointStatus,
-            'KalturaQuizFileType': KalturaQuizFileType,
+            'KalturaQuestionType': KalturaQuestionType,
             'KalturaQuizOutputType': KalturaQuizOutputType,
             'KalturaThumbCuePointSubType': KalturaThumbCuePointSubType,
             'KalturaCuePointOrderBy': KalturaCuePointOrderBy,

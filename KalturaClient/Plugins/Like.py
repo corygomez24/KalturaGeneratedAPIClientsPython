@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,8 +27,21 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -116,7 +129,7 @@ class KalturaLikeListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'objects': (KalturaObjectFactory.createArray, KalturaLike), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaLike'), 
     }
 
     def fromXml(self, node):
@@ -260,29 +273,20 @@ class KalturaLikeService(KalturaServiceBase):
     def __init__(self, client = None):
         KalturaServiceBase.__init__(self, client)
 
-    def like(self, entryId):
-        kparams = KalturaParams()
-        kparams.addStringIfDefined("entryId", entryId)
-        self.client.queueServiceActionCall("like_like", "like", None, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return getXmlNodeBool(resultNode)
-
-    def unlike(self, entryId):
-        kparams = KalturaParams()
-        kparams.addStringIfDefined("entryId", entryId)
-        self.client.queueServiceActionCall("like_like", "unlike", None, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return getXmlNodeBool(resultNode)
-
     def checkLikeExists(self, entryId, userId = NotImplemented):
         kparams = KalturaParams()
         kparams.addStringIfDefined("entryId", entryId)
         kparams.addStringIfDefined("userId", userId)
-        self.client.queueServiceActionCall("like_like", "checkLikeExists", None, kparams)
+        self.client.queueServiceActionCall("like_like", "checkLikeExists", "None", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return getXmlNodeBool(resultNode)
+
+    def like(self, entryId):
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("entryId", entryId)
+        self.client.queueServiceActionCall("like_like", "like", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
@@ -292,11 +296,20 @@ class KalturaLikeService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addObjectIfDefined("filter", filter)
         kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall("like_like", "list", KalturaLikeListResponse, kparams)
+        self.client.queueServiceActionCall("like_like", "list", "KalturaLikeListResponse", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaLikeListResponse)
+        return KalturaObjectFactory.create(resultNode, 'KalturaLikeListResponse')
+
+    def unlike(self, entryId):
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("entryId", entryId)
+        self.client.queueServiceActionCall("like_like", "unlike", "None", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return getXmlNodeBool(resultNode)
 
 ########## main ##########
 class KalturaLikeClientPlugin(KalturaClientPlugin):
@@ -313,6 +326,7 @@ class KalturaLikeClientPlugin(KalturaClientPlugin):
     # @return array<KalturaServiceBase>
     def getServices(self):
         return {
+            'like': KalturaLikeService,
         }
 
     def getEnums(self):

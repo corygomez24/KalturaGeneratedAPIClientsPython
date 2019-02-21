@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,8 +27,21 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -215,7 +228,7 @@ class KalturaShortLinkBaseFilter(KalturaFilter):
             orderBy,
             advancedSearch)
 
-        # @var int
+        # @var string
         self.idEqual = idEqual
 
         # @var string
@@ -265,7 +278,7 @@ class KalturaShortLinkBaseFilter(KalturaFilter):
 
 
     PROPERTY_LOADERS = {
-        'idEqual': getXmlNodeInt, 
+        'idEqual': getXmlNodeText, 
         'idIn': getXmlNodeText, 
         'createdAtGreaterThanOrEqual': getXmlNodeInt, 
         'createdAtLessThanOrEqual': getXmlNodeInt, 
@@ -290,7 +303,7 @@ class KalturaShortLinkBaseFilter(KalturaFilter):
     def toParams(self):
         kparams = KalturaFilter.toParams(self)
         kparams.put("objectType", "KalturaShortLinkBaseFilter")
-        kparams.addIntIfDefined("idEqual", self.idEqual)
+        kparams.addStringIfDefined("idEqual", self.idEqual)
         kparams.addStringIfDefined("idIn", self.idIn)
         kparams.addIntIfDefined("createdAtGreaterThanOrEqual", self.createdAtGreaterThanOrEqual)
         kparams.addIntIfDefined("createdAtLessThanOrEqual", self.createdAtLessThanOrEqual)
@@ -420,7 +433,7 @@ class KalturaShortLinkListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'objects': (KalturaObjectFactory.createArray, KalturaShortLink), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaShortLink'), 
     }
 
     def fromXml(self, node):
@@ -502,62 +515,38 @@ class KalturaShortLinkService(KalturaServiceBase):
     def __init__(self, client = None):
         KalturaServiceBase.__init__(self, client)
 
-    def list(self, filter = NotImplemented, pager = NotImplemented):
-        """List short link objects by filter and pager"""
-
-        kparams = KalturaParams()
-        kparams.addObjectIfDefined("filter", filter)
-        kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall("shortlink_shortlink", "list", KalturaShortLinkListResponse, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaShortLinkListResponse)
-
     def add(self, shortLink):
         """Allows you to add a short link object"""
 
         kparams = KalturaParams()
         kparams.addObjectIfDefined("shortLink", shortLink)
-        self.client.queueServiceActionCall("shortlink_shortlink", "add", KalturaShortLink, kparams)
+        self.client.queueServiceActionCall("shortlink_shortlink", "add", "KalturaShortLink", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaShortLink)
-
-    def get(self, id):
-        """Retrieve an short link object by id"""
-
-        kparams = KalturaParams()
-        kparams.addStringIfDefined("id", id)
-        self.client.queueServiceActionCall("shortlink_shortlink", "get", KalturaShortLink, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaShortLink)
-
-    def update(self, id, shortLink):
-        """Update exisitng short link"""
-
-        kparams = KalturaParams()
-        kparams.addStringIfDefined("id", id)
-        kparams.addObjectIfDefined("shortLink", shortLink)
-        self.client.queueServiceActionCall("shortlink_shortlink", "update", KalturaShortLink, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaShortLink)
+        return KalturaObjectFactory.create(resultNode, 'KalturaShortLink')
 
     def delete(self, id):
         """Mark the short link as deleted"""
 
         kparams = KalturaParams()
         kparams.addStringIfDefined("id", id)
-        self.client.queueServiceActionCall("shortlink_shortlink", "delete", KalturaShortLink, kparams)
+        self.client.queueServiceActionCall("shortlink_shortlink", "delete", "KalturaShortLink", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaShortLink)
+        return KalturaObjectFactory.create(resultNode, 'KalturaShortLink')
+
+    def get(self, id):
+        """Retrieve an short link object by id"""
+
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("id", id)
+        self.client.queueServiceActionCall("shortlink_shortlink", "get", "KalturaShortLink", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaShortLink')
 
     def goto(self, id, proxy = False):
         """Serves short link"""
@@ -567,6 +556,30 @@ class KalturaShortLinkService(KalturaServiceBase):
         kparams.addBoolIfDefined("proxy", proxy);
         self.client.queueServiceActionCall('shortlink_shortlink', 'goto', None ,kparams)
         return self.client.getServeUrl()
+
+    def list(self, filter = NotImplemented, pager = NotImplemented):
+        """List short link objects by filter and pager"""
+
+        kparams = KalturaParams()
+        kparams.addObjectIfDefined("filter", filter)
+        kparams.addObjectIfDefined("pager", pager)
+        self.client.queueServiceActionCall("shortlink_shortlink", "list", "KalturaShortLinkListResponse", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaShortLinkListResponse')
+
+    def update(self, id, shortLink):
+        """Update existing short link"""
+
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("id", id)
+        kparams.addObjectIfDefined("shortLink", shortLink)
+        self.client.queueServiceActionCall("shortlink_shortlink", "update", "KalturaShortLink", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaShortLink')
 
 ########## main ##########
 class KalturaShortLinkClientPlugin(KalturaClientPlugin):
@@ -583,6 +596,7 @@ class KalturaShortLinkClientPlugin(KalturaClientPlugin):
     # @return array<KalturaServiceBase>
     def getServices(self):
         return {
+            'shortLink': KalturaShortLinkService,
         }
 
     def getEnums(self):

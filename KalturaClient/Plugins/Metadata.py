@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,8 +27,21 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -76,6 +89,8 @@ class KalturaMetadataObjectType(object):
     AD_CUE_POINT = "adCuePointMetadata.AdCuePoint"
     ANNOTATION = "annotationMetadata.Annotation"
     CODE_CUE_POINT = "codeCuePointMetadata.CodeCuePoint"
+    ANSWER_CUE_POINT = "quiz.AnswerCuePoint"
+    QUESTION_CUE_POINT = "quiz.QuestionCuePoint"
     THUMB_CUE_POINT = "thumbCuePointMetadata.thumbCuePoint"
     ENTRY = "1"
     CATEGORY = "2"
@@ -541,7 +556,7 @@ class KalturaMetadataListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'objects': (KalturaObjectFactory.createArray, KalturaMetadata), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaMetadata'), 
     }
 
     def fromXml(self, node):
@@ -812,7 +827,7 @@ class KalturaMetadataProfileFieldListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'objects': (KalturaObjectFactory.createArray, KalturaMetadataProfileField), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaMetadataProfileField'), 
     }
 
     def fromXml(self, node):
@@ -843,7 +858,7 @@ class KalturaMetadataProfileListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'objects': (KalturaObjectFactory.createArray, KalturaMetadataProfile), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaMetadataProfile'), 
     }
 
     def fromXml(self, node):
@@ -857,6 +872,41 @@ class KalturaMetadataProfileListResponse(KalturaListResponse):
 
     def getObjects(self):
         return self.objects
+
+
+# @package Kaltura
+# @subpackage Client
+class KalturaMetadataReplacementOptionsItem(KalturaPluginReplacementOptionsItem):
+    """Advanced metadata configuration for entry replacement process"""
+
+    def __init__(self,
+            shouldCopyMetadata=NotImplemented):
+        KalturaPluginReplacementOptionsItem.__init__(self)
+
+        # If true custom-metadata transferred to temp entry on entry replacement
+        # @var bool
+        self.shouldCopyMetadata = shouldCopyMetadata
+
+
+    PROPERTY_LOADERS = {
+        'shouldCopyMetadata': getXmlNodeBool, 
+    }
+
+    def fromXml(self, node):
+        KalturaPluginReplacementOptionsItem.fromXml(self, node)
+        self.fromXmlImpl(node, KalturaMetadataReplacementOptionsItem.PROPERTY_LOADERS)
+
+    def toParams(self):
+        kparams = KalturaPluginReplacementOptionsItem.toParams(self)
+        kparams.put("objectType", "KalturaMetadataReplacementOptionsItem")
+        kparams.addBoolIfDefined("shouldCopyMetadata", self.shouldCopyMetadata)
+        return kparams
+
+    def getShouldCopyMetadata(self):
+        return self.shouldCopyMetadata
+
+    def setShouldCopyMetadata(self, newShouldCopyMetadata):
+        self.shouldCopyMetadata = newShouldCopyMetadata
 
 
 # @package Kaltura
@@ -889,15 +939,15 @@ class KalturaMetadataResponseProfileMapping(KalturaResponseProfileMapping):
 # @subpackage Client
 class KalturaTransformMetadataJobData(KalturaJobData):
     def __init__(self,
-            srcXslPath=NotImplemented,
+            srcXsl=NotImplemented,
             srcVersion=NotImplemented,
             destVersion=NotImplemented,
-            destXsdPath=NotImplemented,
+            destXsd=NotImplemented,
             metadataProfileId=NotImplemented):
         KalturaJobData.__init__(self)
 
-        # @var string
-        self.srcXslPath = srcXslPath
+        # @var KalturaFileContainer
+        self.srcXsl = srcXsl
 
         # @var int
         self.srcVersion = srcVersion
@@ -905,18 +955,18 @@ class KalturaTransformMetadataJobData(KalturaJobData):
         # @var int
         self.destVersion = destVersion
 
-        # @var string
-        self.destXsdPath = destXsdPath
+        # @var KalturaFileContainer
+        self.destXsd = destXsd
 
         # @var int
         self.metadataProfileId = metadataProfileId
 
 
     PROPERTY_LOADERS = {
-        'srcXslPath': getXmlNodeText, 
+        'srcXsl': (KalturaObjectFactory.create, 'KalturaFileContainer'), 
         'srcVersion': getXmlNodeInt, 
         'destVersion': getXmlNodeInt, 
-        'destXsdPath': getXmlNodeText, 
+        'destXsd': (KalturaObjectFactory.create, 'KalturaFileContainer'), 
         'metadataProfileId': getXmlNodeInt, 
     }
 
@@ -927,18 +977,18 @@ class KalturaTransformMetadataJobData(KalturaJobData):
     def toParams(self):
         kparams = KalturaJobData.toParams(self)
         kparams.put("objectType", "KalturaTransformMetadataJobData")
-        kparams.addStringIfDefined("srcXslPath", self.srcXslPath)
+        kparams.addObjectIfDefined("srcXsl", self.srcXsl)
         kparams.addIntIfDefined("srcVersion", self.srcVersion)
         kparams.addIntIfDefined("destVersion", self.destVersion)
-        kparams.addStringIfDefined("destXsdPath", self.destXsdPath)
+        kparams.addObjectIfDefined("destXsd", self.destXsd)
         kparams.addIntIfDefined("metadataProfileId", self.metadataProfileId)
         return kparams
 
-    def getSrcXslPath(self):
-        return self.srcXslPath
+    def getSrcXsl(self):
+        return self.srcXsl
 
-    def setSrcXslPath(self, newSrcXslPath):
-        self.srcXslPath = newSrcXslPath
+    def setSrcXsl(self, newSrcXsl):
+        self.srcXsl = newSrcXsl
 
     def getSrcVersion(self):
         return self.srcVersion
@@ -952,11 +1002,11 @@ class KalturaTransformMetadataJobData(KalturaJobData):
     def setDestVersion(self, newDestVersion):
         self.destVersion = newDestVersion
 
-    def getDestXsdPath(self):
-        return self.destXsdPath
+    def getDestXsd(self):
+        return self.destXsd
 
-    def setDestXsdPath(self, newDestXsdPath):
-        self.destXsdPath = newDestXsdPath
+    def setDestXsd(self, newDestXsd):
+        self.destXsd = newDestXsd
 
     def getMetadataProfileId(self):
         return self.metadataProfileId
@@ -1081,6 +1131,7 @@ class KalturaMatchMetadataCondition(KalturaMatchCondition):
             description=NotImplemented,
             not_=NotImplemented,
             values=NotImplemented,
+            matchType=NotImplemented,
             xPath=NotImplemented,
             profileId=NotImplemented,
             profileSystemName=NotImplemented):
@@ -1088,7 +1139,8 @@ class KalturaMatchMetadataCondition(KalturaMatchCondition):
             type,
             description,
             not_,
-            values)
+            values,
+            matchType)
 
         # May contain the full xpath to the field in three formats
         # 	 1. Slashed xPath, e.g. /metadata/myElementName
@@ -1392,6 +1444,7 @@ class KalturaMetadataFieldChangedCondition(KalturaMatchCondition):
             description=NotImplemented,
             not_=NotImplemented,
             values=NotImplemented,
+            matchType=NotImplemented,
             xPath=NotImplemented,
             profileId=NotImplemented,
             profileSystemName=NotImplemented,
@@ -1401,7 +1454,8 @@ class KalturaMetadataFieldChangedCondition(KalturaMatchCondition):
             type,
             description,
             not_,
-            values)
+            values,
+            matchType)
 
         # May contain the full xpath to the field in three formats
         # 	 1. Slashed xPath, e.g. /metadata/myElementName
@@ -1588,6 +1642,72 @@ class KalturaMetadataSearchItem(KalturaSearchOperator):
 
 # @package Kaltura
 # @subpackage Client
+class KalturaMetadataField(KalturaStringField):
+    def __init__(self,
+            description=NotImplemented,
+            value=NotImplemented,
+            xPath=NotImplemented,
+            profileId=NotImplemented,
+            profileSystemName=NotImplemented):
+        KalturaStringField.__init__(self,
+            description,
+            value)
+
+        # May contain the full xpath to the field in three formats
+        # 	 1. Slashed xPath, e.g. /metadata/myElementName
+        # 	 2. Using local-name function, e.g. /[local-name()='metadata']/[local-name()='myElementName']
+        # 	 3. Using only the field name, e.g. myElementName, it will be searched as //myElementName
+        # @var string
+        self.xPath = xPath
+
+        # Metadata profile id
+        # @var int
+        self.profileId = profileId
+
+        # Metadata profile system name
+        # @var string
+        self.profileSystemName = profileSystemName
+
+
+    PROPERTY_LOADERS = {
+        'xPath': getXmlNodeText, 
+        'profileId': getXmlNodeInt, 
+        'profileSystemName': getXmlNodeText, 
+    }
+
+    def fromXml(self, node):
+        KalturaStringField.fromXml(self, node)
+        self.fromXmlImpl(node, KalturaMetadataField.PROPERTY_LOADERS)
+
+    def toParams(self):
+        kparams = KalturaStringField.toParams(self)
+        kparams.put("objectType", "KalturaMetadataField")
+        kparams.addStringIfDefined("xPath", self.xPath)
+        kparams.addIntIfDefined("profileId", self.profileId)
+        kparams.addStringIfDefined("profileSystemName", self.profileSystemName)
+        return kparams
+
+    def getXPath(self):
+        return self.xPath
+
+    def setXPath(self, newXPath):
+        self.xPath = newXPath
+
+    def getProfileId(self):
+        return self.profileId
+
+    def setProfileId(self, newProfileId):
+        self.profileId = newProfileId
+
+    def getProfileSystemName(self):
+        return self.profileSystemName
+
+    def setProfileSystemName(self, newProfileSystemName):
+        self.profileSystemName = newProfileSystemName
+
+
+# @package Kaltura
+# @subpackage Client
 class KalturaMetadataFilter(KalturaMetadataBaseFilter):
     def __init__(self,
             orderBy=NotImplemented,
@@ -1664,11 +1784,26 @@ class KalturaMetadataService(KalturaServiceBase):
         kparams.addStringIfDefined("objectType", objectType)
         kparams.addStringIfDefined("objectId", objectId)
         kparams.addStringIfDefined("xmlData", xmlData)
-        self.client.queueServiceActionCall("metadata_metadata", "add", KalturaMetadata, kparams)
+        self.client.queueServiceActionCall("metadata_metadata", "add", "KalturaMetadata", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaMetadata)
+        return KalturaObjectFactory.create(resultNode, 'KalturaMetadata')
+
+    def addFromBulk(self, metadataProfileId, objectType, objectId, url):
+        """Allows you to add a metadata XML data from remote URL.
+        	 Enables different permissions than addFromUrl action."""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("metadataProfileId", metadataProfileId);
+        kparams.addStringIfDefined("objectType", objectType)
+        kparams.addStringIfDefined("objectId", objectId)
+        kparams.addStringIfDefined("url", url)
+        self.client.queueServiceActionCall("metadata_metadata", "addFromBulk", "KalturaMetadata", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaMetadata')
 
     def addFromFile(self, metadataProfileId, objectType, objectId, xmlFile):
         """Allows you to add a metadata object and metadata file associated with Kaltura object"""
@@ -1677,101 +1812,59 @@ class KalturaMetadataService(KalturaServiceBase):
         kparams.addIntIfDefined("metadataProfileId", metadataProfileId);
         kparams.addStringIfDefined("objectType", objectType)
         kparams.addStringIfDefined("objectId", objectId)
-        kfiles = KalturaFiles()
-        kfiles.put("xmlFile", xmlFile);
-        self.client.queueServiceActionCall("metadata_metadata", "addFromFile", KalturaMetadata, kparams, kfiles)
+        kfiles = {"xmlFile": xmlFile}
+        self.client.queueServiceActionCall("metadata_metadata", "addFromFile", "KalturaMetadata", kparams, kfiles)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaMetadata)
+        return KalturaObjectFactory.create(resultNode, 'KalturaMetadata')
 
     def addFromUrl(self, metadataProfileId, objectType, objectId, url):
-        """Allows you to add a metadata xml data from remote URL"""
+        """Allows you to add a metadata XML data from remote URL"""
 
         kparams = KalturaParams()
         kparams.addIntIfDefined("metadataProfileId", metadataProfileId);
         kparams.addStringIfDefined("objectType", objectType)
         kparams.addStringIfDefined("objectId", objectId)
         kparams.addStringIfDefined("url", url)
-        self.client.queueServiceActionCall("metadata_metadata", "addFromUrl", KalturaMetadata, kparams)
+        self.client.queueServiceActionCall("metadata_metadata", "addFromUrl", "KalturaMetadata", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaMetadata)
-
-    def addFromBulk(self, metadataProfileId, objectType, objectId, url):
-        """Allows you to add a metadata xml data from remote URL.
-        	 Enables different permissions than addFromUrl action."""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("metadataProfileId", metadataProfileId);
-        kparams.addStringIfDefined("objectType", objectType)
-        kparams.addStringIfDefined("objectId", objectId)
-        kparams.addStringIfDefined("url", url)
-        self.client.queueServiceActionCall("metadata_metadata", "addFromBulk", KalturaMetadata, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaMetadata)
-
-    def get(self, id):
-        """Retrieve a metadata object by id"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("metadata_metadata", "get", KalturaMetadata, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaMetadata)
-
-    def update(self, id, xmlData = NotImplemented, version = NotImplemented):
-        """Update an existing metadata object with new XML content"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        kparams.addStringIfDefined("xmlData", xmlData)
-        kparams.addIntIfDefined("version", version);
-        self.client.queueServiceActionCall("metadata_metadata", "update", KalturaMetadata, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaMetadata)
-
-    def updateFromFile(self, id, xmlFile = NotImplemented):
-        """Update an existing metadata object with new XML file"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        kfiles = KalturaFiles()
-        kfiles.put("xmlFile", xmlFile);
-        self.client.queueServiceActionCall("metadata_metadata", "updateFromFile", KalturaMetadata, kparams, kfiles)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaMetadata)
-
-    def list(self, filter = NotImplemented, pager = NotImplemented):
-        """List metadata objects by filter and pager"""
-
-        kparams = KalturaParams()
-        kparams.addObjectIfDefined("filter", filter)
-        kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall("metadata_metadata", "list", KalturaMetadataListResponse, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaMetadataListResponse)
+        return KalturaObjectFactory.create(resultNode, 'KalturaMetadata')
 
     def delete(self, id):
         """Delete an existing metadata"""
 
         kparams = KalturaParams()
         kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("metadata_metadata", "delete", None, kparams)
+        self.client.queueServiceActionCall("metadata_metadata", "delete", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
+
+    def get(self, id):
+        """Retrieve a metadata object by id"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        self.client.queueServiceActionCall("metadata_metadata", "get", "KalturaMetadata", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaMetadata')
+
+    def index(self, id, shouldUpdate):
+        """Index metadata by id, will also index the related object"""
+
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("id", id)
+        kparams.addBoolIfDefined("shouldUpdate", shouldUpdate);
+        self.client.queueServiceActionCall("metadata_metadata", "index", "None", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return getXmlNodeInt(resultNode)
 
     def invalidate(self, id, version = NotImplemented):
         """Mark existing metadata as invalid
@@ -1780,22 +1873,22 @@ class KalturaMetadataService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addIntIfDefined("id", id);
         kparams.addIntIfDefined("version", version);
-        self.client.queueServiceActionCall("metadata_metadata", "invalidate", None, kparams)
+        self.client.queueServiceActionCall("metadata_metadata", "invalidate", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
 
-    def index(self, id, shouldUpdate):
-        """Index metadata by id, will also index the related object"""
+    def list(self, filter = NotImplemented, pager = NotImplemented):
+        """List metadata objects by filter and pager"""
 
         kparams = KalturaParams()
-        kparams.addStringIfDefined("id", id)
-        kparams.addBoolIfDefined("shouldUpdate", shouldUpdate);
-        self.client.queueServiceActionCall("metadata_metadata", "index", None, kparams)
+        kparams.addObjectIfDefined("filter", filter)
+        kparams.addObjectIfDefined("pager", pager)
+        self.client.queueServiceActionCall("metadata_metadata", "list", "KalturaMetadataListResponse", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return getXmlNodeInt(resultNode)
+        return KalturaObjectFactory.create(resultNode, 'KalturaMetadataListResponse')
 
     def serve(self, id):
         """Serves metadata XML file"""
@@ -1805,18 +1898,42 @@ class KalturaMetadataService(KalturaServiceBase):
         self.client.queueServiceActionCall('metadata_metadata', 'serve', None ,kparams)
         return self.client.getServeUrl()
 
+    def update(self, id, xmlData = NotImplemented, version = NotImplemented):
+        """Update an existing metadata object with new XML content"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        kparams.addStringIfDefined("xmlData", xmlData)
+        kparams.addIntIfDefined("version", version);
+        self.client.queueServiceActionCall("metadata_metadata", "update", "KalturaMetadata", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaMetadata')
+
+    def updateFromFile(self, id, xmlFile = NotImplemented):
+        """Update an existing metadata object with new XML file"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        kfiles = {"xmlFile": xmlFile}
+        self.client.queueServiceActionCall("metadata_metadata", "updateFromFile", "KalturaMetadata", kparams, kfiles)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaMetadata')
+
     def updateFromXSL(self, id, xslFile):
         """Action transforms current metadata object XML using a provided XSL."""
 
         kparams = KalturaParams()
         kparams.addIntIfDefined("id", id);
-        kfiles = KalturaFiles()
-        kfiles.put("xslFile", xslFile);
-        self.client.queueServiceActionCall("metadata_metadata", "updateFromXSL", KalturaMetadata, kparams, kfiles)
+        kfiles = {"xslFile": xslFile}
+        self.client.queueServiceActionCall("metadata_metadata", "updateFromXSL", "KalturaMetadata", kparams, kfiles)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaMetadata)
+        return KalturaObjectFactory.create(resultNode, 'KalturaMetadata')
 
 
 # @package Kaltura
@@ -1834,50 +1951,45 @@ class KalturaMetadataProfileService(KalturaServiceBase):
         kparams.addObjectIfDefined("metadataProfile", metadataProfile)
         kparams.addStringIfDefined("xsdData", xsdData)
         kparams.addStringIfDefined("viewsData", viewsData)
-        self.client.queueServiceActionCall("metadata_metadataprofile", "add", KalturaMetadataProfile, kparams)
+        self.client.queueServiceActionCall("metadata_metadataprofile", "add", "KalturaMetadataProfile", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaMetadataProfile)
+        return KalturaObjectFactory.create(resultNode, 'KalturaMetadataProfile')
 
     def addFromFile(self, metadataProfile, xsdFile, viewsFile = NotImplemented):
         """Allows you to add a metadata profile object and metadata profile file associated with Kaltura object type"""
 
         kparams = KalturaParams()
         kparams.addObjectIfDefined("metadataProfile", metadataProfile)
-        kfiles = KalturaFiles()
-        kfiles.put("xsdFile", xsdFile);
-        kfiles.put("viewsFile", viewsFile);
-        self.client.queueServiceActionCall("metadata_metadataprofile", "addFromFile", KalturaMetadataProfile, kparams, kfiles)
+        kfiles = {"xsdFile": xsdFile}
+        kfiles = {"viewsFile": viewsFile}
+        self.client.queueServiceActionCall("metadata_metadataprofile", "addFromFile", "KalturaMetadataProfile", kparams, kfiles)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaMetadataProfile)
+        return KalturaObjectFactory.create(resultNode, 'KalturaMetadataProfile')
+
+    def delete(self, id):
+        """Delete an existing metadata profile"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        self.client.queueServiceActionCall("metadata_metadataprofile", "delete", "None", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
 
     def get(self, id):
         """Retrieve a metadata profile object by id"""
 
         kparams = KalturaParams()
         kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("metadata_metadataprofile", "get", KalturaMetadataProfile, kparams)
+        self.client.queueServiceActionCall("metadata_metadataprofile", "get", "KalturaMetadataProfile", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaMetadataProfile)
-
-    def update(self, id, metadataProfile, xsdData = NotImplemented, viewsData = NotImplemented):
-        """Update an existing metadata object"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        kparams.addObjectIfDefined("metadataProfile", metadataProfile)
-        kparams.addStringIfDefined("xsdData", xsdData)
-        kparams.addStringIfDefined("viewsData", viewsData)
-        self.client.queueServiceActionCall("metadata_metadataprofile", "update", KalturaMetadataProfile, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaMetadataProfile)
+        return KalturaObjectFactory.create(resultNode, 'KalturaMetadataProfile')
 
     def list(self, filter = NotImplemented, pager = NotImplemented):
         """List metadata profile objects by filter and pager"""
@@ -1885,32 +1997,22 @@ class KalturaMetadataProfileService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addObjectIfDefined("filter", filter)
         kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall("metadata_metadataprofile", "list", KalturaMetadataProfileListResponse, kparams)
+        self.client.queueServiceActionCall("metadata_metadataprofile", "list", "KalturaMetadataProfileListResponse", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaMetadataProfileListResponse)
+        return KalturaObjectFactory.create(resultNode, 'KalturaMetadataProfileListResponse')
 
     def listFields(self, metadataProfileId):
         """List metadata profile fields by metadata profile id"""
 
         kparams = KalturaParams()
         kparams.addIntIfDefined("metadataProfileId", metadataProfileId);
-        self.client.queueServiceActionCall("metadata_metadataprofile", "listFields", KalturaMetadataProfileFieldListResponse, kparams)
+        self.client.queueServiceActionCall("metadata_metadataprofile", "listFields", "KalturaMetadataProfileFieldListResponse", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaMetadataProfileFieldListResponse)
-
-    def delete(self, id):
-        """Delete an existing metadata profile"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("metadata_metadataprofile", "delete", None, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaMetadataProfileFieldListResponse')
 
     def revert(self, id, toVersion):
         """Update an existing metadata object definition file"""
@@ -1918,50 +2020,11 @@ class KalturaMetadataProfileService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addIntIfDefined("id", id);
         kparams.addIntIfDefined("toVersion", toVersion);
-        self.client.queueServiceActionCall("metadata_metadataprofile", "revert", KalturaMetadataProfile, kparams)
+        self.client.queueServiceActionCall("metadata_metadataprofile", "revert", "KalturaMetadataProfile", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaMetadataProfile)
-
-    def updateDefinitionFromFile(self, id, xsdFile):
-        """Update an existing metadata object definition file"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        kfiles = KalturaFiles()
-        kfiles.put("xsdFile", xsdFile);
-        self.client.queueServiceActionCall("metadata_metadataprofile", "updateDefinitionFromFile", KalturaMetadataProfile, kparams, kfiles)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaMetadataProfile)
-
-    def updateViewsFromFile(self, id, viewsFile):
-        """Update an existing metadata object views file"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        kfiles = KalturaFiles()
-        kfiles.put("viewsFile", viewsFile);
-        self.client.queueServiceActionCall("metadata_metadataprofile", "updateViewsFromFile", KalturaMetadataProfile, kparams, kfiles)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaMetadataProfile)
-
-    def updateTransformationFromFile(self, id, xsltFile):
-        """Update an existing metadata object xslt file"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        kfiles = KalturaFiles()
-        kfiles.put("xsltFile", xsltFile);
-        self.client.queueServiceActionCall("metadata_metadataprofile", "updateTransformationFromFile", KalturaMetadataProfile, kparams, kfiles)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaMetadataProfile)
+        return KalturaObjectFactory.create(resultNode, 'KalturaMetadataProfile')
 
     def serve(self, id):
         """Serves metadata profile XSD file"""
@@ -1979,6 +2042,56 @@ class KalturaMetadataProfileService(KalturaServiceBase):
         self.client.queueServiceActionCall('metadata_metadataprofile', 'serveView', None ,kparams)
         return self.client.getServeUrl()
 
+    def update(self, id, metadataProfile, xsdData = NotImplemented, viewsData = NotImplemented):
+        """Update an existing metadata object"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        kparams.addObjectIfDefined("metadataProfile", metadataProfile)
+        kparams.addStringIfDefined("xsdData", xsdData)
+        kparams.addStringIfDefined("viewsData", viewsData)
+        self.client.queueServiceActionCall("metadata_metadataprofile", "update", "KalturaMetadataProfile", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaMetadataProfile')
+
+    def updateDefinitionFromFile(self, id, xsdFile):
+        """Update an existing metadata object definition file"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        kfiles = {"xsdFile": xsdFile}
+        self.client.queueServiceActionCall("metadata_metadataprofile", "updateDefinitionFromFile", "KalturaMetadataProfile", kparams, kfiles)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaMetadataProfile')
+
+    def updateTransformationFromFile(self, id, xsltFile):
+        """Update an existing metadata object XSLT file"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        kfiles = {"xsltFile": xsltFile}
+        self.client.queueServiceActionCall("metadata_metadataprofile", "updateTransformationFromFile", "KalturaMetadataProfile", kparams, kfiles)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaMetadataProfile')
+
+    def updateViewsFromFile(self, id, viewsFile):
+        """Update an existing metadata object views file"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        kfiles = {"viewsFile": viewsFile}
+        self.client.queueServiceActionCall("metadata_metadataprofile", "updateViewsFromFile", "KalturaMetadataProfile", kparams, kfiles)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaMetadataProfile')
+
 ########## main ##########
 class KalturaMetadataClientPlugin(KalturaClientPlugin):
     # KalturaMetadataClientPlugin
@@ -1994,12 +2107,13 @@ class KalturaMetadataClientPlugin(KalturaClientPlugin):
     # @return array<KalturaServiceBase>
     def getServices(self):
         return {
+            'metadata': KalturaMetadataService,
+            'metadataProfile': KalturaMetadataProfileService,
         }
 
     def getEnums(self):
         return {
             'KalturaMetadataProfileCreateMode': KalturaMetadataProfileCreateMode,
-            'KalturaMetadataProfileFieldStatus': KalturaMetadataProfileFieldStatus,
             'KalturaMetadataProfileStatus': KalturaMetadataProfileStatus,
             'KalturaMetadataStatus': KalturaMetadataStatus,
             'KalturaMetadataObjectType': KalturaMetadataObjectType,
@@ -2012,13 +2126,12 @@ class KalturaMetadataClientPlugin(KalturaClientPlugin):
             'KalturaMetadata': KalturaMetadata,
             'KalturaMetadataProfile': KalturaMetadataProfile,
             'KalturaMetadataProfileField': KalturaMetadataProfileField,
-            'KalturaTransformMetadataResponse': KalturaTransformMetadataResponse,
-            'KalturaUpgradeMetadataResponse': KalturaUpgradeMetadataResponse,
             'KalturaImportMetadataJobData': KalturaImportMetadataJobData,
             'KalturaMetadataListResponse': KalturaMetadataListResponse,
             'KalturaMetadataProfileBaseFilter': KalturaMetadataProfileBaseFilter,
             'KalturaMetadataProfileFieldListResponse': KalturaMetadataProfileFieldListResponse,
             'KalturaMetadataProfileListResponse': KalturaMetadataProfileListResponse,
+            'KalturaMetadataReplacementOptionsItem': KalturaMetadataReplacementOptionsItem,
             'KalturaMetadataResponseProfileMapping': KalturaMetadataResponseProfileMapping,
             'KalturaTransformMetadataJobData': KalturaTransformMetadataJobData,
             'KalturaCompareMetadataCondition': KalturaCompareMetadataCondition,
@@ -2028,6 +2141,7 @@ class KalturaMetadataClientPlugin(KalturaClientPlugin):
             'KalturaMetadataFieldChangedCondition': KalturaMetadataFieldChangedCondition,
             'KalturaMetadataProfileFilter': KalturaMetadataProfileFilter,
             'KalturaMetadataSearchItem': KalturaMetadataSearchItem,
+            'KalturaMetadataField': KalturaMetadataField,
             'KalturaMetadataFilter': KalturaMetadataFilter,
         }
 

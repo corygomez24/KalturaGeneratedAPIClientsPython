@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,9 +27,22 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from ContentDistribution import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from .ContentDistribution import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -236,7 +249,7 @@ class KalturaYoutubeApiDistributionJobProviderData(KalturaConfigurableDistributi
     PROPERTY_LOADERS = {
         'videoAssetFilePath': getXmlNodeText, 
         'thumbAssetFilePath': getXmlNodeText, 
-        'captionsInfo': (KalturaObjectFactory.createArray, KalturaYouTubeApiCaptionDistributionInfo), 
+        'captionsInfo': (KalturaObjectFactory.createArray, 'KalturaYouTubeApiCaptionDistributionInfo'), 
     }
 
     def fromXml(self, node):
@@ -645,7 +658,6 @@ class KalturaYoutubeApiDistributionClientPlugin(KalturaClientPlugin):
     def getEnums(self):
         return {
             'KalturaYouTubeApiDistributionCaptionAction': KalturaYouTubeApiDistributionCaptionAction,
-            'KalturaYouTubeApiDistributionField': KalturaYouTubeApiDistributionField,
             'KalturaYoutubeApiDistributionProfileOrderBy': KalturaYoutubeApiDistributionProfileOrderBy,
             'KalturaYoutubeApiDistributionProviderOrderBy': KalturaYoutubeApiDistributionProviderOrderBy,
         }

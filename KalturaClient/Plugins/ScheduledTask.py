@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,8 +27,21 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -46,9 +59,22 @@ class KalturaDeleteFlavorsLogicType(object):
 
 # @package Kaltura
 # @subpackage Client
+class KalturaDryRunFileType(object):
+    LIST_RESPONSE = 1
+    CSV = 2
+
+    def __init__(self, value):
+        self.value = value
+
+    def getValue(self):
+        return self.value
+
+# @package Kaltura
+# @subpackage Client
 class KalturaScheduledTaskAddOrRemoveType(object):
     ADD = 1
     REMOVE = 2
+    MOVE = 3
 
     def __init__(self, value):
         self.value = value
@@ -75,6 +101,7 @@ class KalturaScheduledTaskProfileStatus(object):
 # @subpackage Client
 class KalturaObjectFilterEngineType(object):
     ENTRY = "1"
+    ENTRY_VENDOR_TASK = "2"
 
     def __init__(self, value):
         self.value = value
@@ -94,6 +121,8 @@ class KalturaObjectTaskType(object):
     CONVERT_ENTRY_FLAVORS = "4"
     DELETE_LOCAL_CONTENT = "5"
     STORAGE_EXPORT = "6"
+    MODIFY_ENTRY = "7"
+    MAIL_NOTIFICATION = "8"
 
     def __init__(self, value):
         self.value = value
@@ -236,8 +265,8 @@ class KalturaScheduledTaskProfile(KalturaObjectBase):
         'description': getXmlNodeText, 
         'status': (KalturaEnumsFactory.createInt, "KalturaScheduledTaskProfileStatus"), 
         'objectFilterEngineType': (KalturaEnumsFactory.createString, "KalturaObjectFilterEngineType"), 
-        'objectFilter': (KalturaObjectFactory.create, KalturaFilter), 
-        'objectTasks': (KalturaObjectFactory.createArray, KalturaObjectTask), 
+        'objectFilter': (KalturaObjectFactory.create, 'KalturaFilter'), 
+        'objectTasks': (KalturaObjectFactory.createArray, 'KalturaObjectTask'), 
         'createdAt': getXmlNodeInt, 
         'updatedAt': getXmlNodeInt, 
         'lastExecutionStartedAt': getXmlNodeInt, 
@@ -479,6 +508,121 @@ class KalturaDeleteLocalContentObjectTask(KalturaObjectTask):
 
 # @package Kaltura
 # @subpackage Client
+class KalturaMailNotificationObjectTask(KalturaObjectTask):
+    def __init__(self,
+            type=NotImplemented,
+            stopProcessingOnError=NotImplemented,
+            mailTo=NotImplemented,
+            sender=NotImplemented,
+            subject=NotImplemented,
+            message=NotImplemented,
+            footer=NotImplemented,
+            link=NotImplemented,
+            sendToUsers=NotImplemented):
+        KalturaObjectTask.__init__(self,
+            type,
+            stopProcessingOnError)
+
+        # The mail to send the notification to
+        # @var string
+        self.mailTo = mailTo
+
+        # The sender in the mail
+        # @var string
+        self.sender = sender
+
+        # The subject of the entry
+        # @var string
+        self.subject = subject
+
+        # The message to send in the notification mail
+        # @var string
+        self.message = message
+
+        # The footer of the message to send in the notification mail
+        # @var string
+        self.footer = footer
+
+        # The basic link for the KMC site
+        # @var string
+        self.link = link
+
+        # Send the mail to each user
+        # @var bool
+        self.sendToUsers = sendToUsers
+
+
+    PROPERTY_LOADERS = {
+        'mailTo': getXmlNodeText, 
+        'sender': getXmlNodeText, 
+        'subject': getXmlNodeText, 
+        'message': getXmlNodeText, 
+        'footer': getXmlNodeText, 
+        'link': getXmlNodeText, 
+        'sendToUsers': getXmlNodeBool, 
+    }
+
+    def fromXml(self, node):
+        KalturaObjectTask.fromXml(self, node)
+        self.fromXmlImpl(node, KalturaMailNotificationObjectTask.PROPERTY_LOADERS)
+
+    def toParams(self):
+        kparams = KalturaObjectTask.toParams(self)
+        kparams.put("objectType", "KalturaMailNotificationObjectTask")
+        kparams.addStringIfDefined("mailTo", self.mailTo)
+        kparams.addStringIfDefined("sender", self.sender)
+        kparams.addStringIfDefined("subject", self.subject)
+        kparams.addStringIfDefined("message", self.message)
+        kparams.addStringIfDefined("footer", self.footer)
+        kparams.addStringIfDefined("link", self.link)
+        kparams.addBoolIfDefined("sendToUsers", self.sendToUsers)
+        return kparams
+
+    def getMailTo(self):
+        return self.mailTo
+
+    def setMailTo(self, newMailTo):
+        self.mailTo = newMailTo
+
+    def getSender(self):
+        return self.sender
+
+    def setSender(self, newSender):
+        self.sender = newSender
+
+    def getSubject(self):
+        return self.subject
+
+    def setSubject(self, newSubject):
+        self.subject = newSubject
+
+    def getMessage(self):
+        return self.message
+
+    def setMessage(self, newMessage):
+        self.message = newMessage
+
+    def getFooter(self):
+        return self.footer
+
+    def setFooter(self, newFooter):
+        self.footer = newFooter
+
+    def getLink(self):
+        return self.link
+
+    def setLink(self, newLink):
+        self.link = newLink
+
+    def getSendToUsers(self):
+        return self.sendToUsers
+
+    def setSendToUsers(self, newSendToUsers):
+        self.sendToUsers = newSendToUsers
+
+
+# @package Kaltura
+# @subpackage Client
 class KalturaModifyCategoriesObjectTask(KalturaObjectTask):
     def __init__(self,
             type=NotImplemented,
@@ -500,7 +644,7 @@ class KalturaModifyCategoriesObjectTask(KalturaObjectTask):
 
     PROPERTY_LOADERS = {
         'addRemoveType': (KalturaEnumsFactory.createInt, "KalturaScheduledTaskAddOrRemoveType"), 
-        'categoryIds': (KalturaObjectFactory.createArray, KalturaIntegerValue), 
+        'categoryIds': (KalturaObjectFactory.createArray, 'KalturaIntegerValue'), 
     }
 
     def fromXml(self, node):
@@ -529,15 +673,138 @@ class KalturaModifyCategoriesObjectTask(KalturaObjectTask):
 
 # @package Kaltura
 # @subpackage Client
+class KalturaModifyEntryObjectTask(KalturaObjectTask):
+    def __init__(self,
+            type=NotImplemented,
+            stopProcessingOnError=NotImplemented,
+            inputMetadataProfileId=NotImplemented,
+            inputMetadata=NotImplemented,
+            outputMetadataProfileId=NotImplemented,
+            outputMetadata=NotImplemented,
+            inputUserId=NotImplemented,
+            inputEntitledUsersEdit=NotImplemented,
+            inputEntitledUsersPublish=NotImplemented):
+        KalturaObjectTask.__init__(self,
+            type,
+            stopProcessingOnError)
+
+        # The input metadata profile id
+        # @var int
+        self.inputMetadataProfileId = inputMetadataProfileId
+
+        # array of {input metadata xpath location,entry field} objects
+        # @var array of KalturaKeyValue
+        self.inputMetadata = inputMetadata
+
+        # The output metadata profile id
+        # @var int
+        self.outputMetadataProfileId = outputMetadataProfileId
+
+        # array of {output metadata xpath location,entry field} objects
+        # @var array of KalturaKeyValue
+        self.outputMetadata = outputMetadata
+
+        # The input user id to set on the entry
+        # @var string
+        self.inputUserId = inputUserId
+
+        # The input entitled users edit to set on the entry
+        # @var string
+        self.inputEntitledUsersEdit = inputEntitledUsersEdit
+
+        # The input entitled users publish to set on the entry
+        # @var string
+        self.inputEntitledUsersPublish = inputEntitledUsersPublish
+
+
+    PROPERTY_LOADERS = {
+        'inputMetadataProfileId': getXmlNodeInt, 
+        'inputMetadata': (KalturaObjectFactory.createArray, 'KalturaKeyValue'), 
+        'outputMetadataProfileId': getXmlNodeInt, 
+        'outputMetadata': (KalturaObjectFactory.createArray, 'KalturaKeyValue'), 
+        'inputUserId': getXmlNodeText, 
+        'inputEntitledUsersEdit': getXmlNodeText, 
+        'inputEntitledUsersPublish': getXmlNodeText, 
+    }
+
+    def fromXml(self, node):
+        KalturaObjectTask.fromXml(self, node)
+        self.fromXmlImpl(node, KalturaModifyEntryObjectTask.PROPERTY_LOADERS)
+
+    def toParams(self):
+        kparams = KalturaObjectTask.toParams(self)
+        kparams.put("objectType", "KalturaModifyEntryObjectTask")
+        kparams.addIntIfDefined("inputMetadataProfileId", self.inputMetadataProfileId)
+        kparams.addArrayIfDefined("inputMetadata", self.inputMetadata)
+        kparams.addIntIfDefined("outputMetadataProfileId", self.outputMetadataProfileId)
+        kparams.addArrayIfDefined("outputMetadata", self.outputMetadata)
+        kparams.addStringIfDefined("inputUserId", self.inputUserId)
+        kparams.addStringIfDefined("inputEntitledUsersEdit", self.inputEntitledUsersEdit)
+        kparams.addStringIfDefined("inputEntitledUsersPublish", self.inputEntitledUsersPublish)
+        return kparams
+
+    def getInputMetadataProfileId(self):
+        return self.inputMetadataProfileId
+
+    def setInputMetadataProfileId(self, newInputMetadataProfileId):
+        self.inputMetadataProfileId = newInputMetadataProfileId
+
+    def getInputMetadata(self):
+        return self.inputMetadata
+
+    def setInputMetadata(self, newInputMetadata):
+        self.inputMetadata = newInputMetadata
+
+    def getOutputMetadataProfileId(self):
+        return self.outputMetadataProfileId
+
+    def setOutputMetadataProfileId(self, newOutputMetadataProfileId):
+        self.outputMetadataProfileId = newOutputMetadataProfileId
+
+    def getOutputMetadata(self):
+        return self.outputMetadata
+
+    def setOutputMetadata(self, newOutputMetadata):
+        self.outputMetadata = newOutputMetadata
+
+    def getInputUserId(self):
+        return self.inputUserId
+
+    def setInputUserId(self, newInputUserId):
+        self.inputUserId = newInputUserId
+
+    def getInputEntitledUsersEdit(self):
+        return self.inputEntitledUsersEdit
+
+    def setInputEntitledUsersEdit(self, newInputEntitledUsersEdit):
+        self.inputEntitledUsersEdit = newInputEntitledUsersEdit
+
+    def getInputEntitledUsersPublish(self):
+        return self.inputEntitledUsersPublish
+
+    def setInputEntitledUsersPublish(self, newInputEntitledUsersPublish):
+        self.inputEntitledUsersPublish = newInputEntitledUsersPublish
+
+
+# @package Kaltura
+# @subpackage Client
 class KalturaScheduledTaskJobData(KalturaJobData):
     def __init__(self,
             maxResults=NotImplemented,
+            totalCount=NotImplemented,
+            fileFormat=NotImplemented,
             resultsFilePath=NotImplemented,
             referenceTime=NotImplemented):
         KalturaJobData.__init__(self)
 
         # @var int
         self.maxResults = maxResults
+
+        # @var int
+        self.totalCount = totalCount
+
+        # @var KalturaDryRunFileType
+        self.fileFormat = fileFormat
 
         # @var string
         self.resultsFilePath = resultsFilePath
@@ -548,6 +815,8 @@ class KalturaScheduledTaskJobData(KalturaJobData):
 
     PROPERTY_LOADERS = {
         'maxResults': getXmlNodeInt, 
+        'totalCount': getXmlNodeInt, 
+        'fileFormat': (KalturaEnumsFactory.createInt, "KalturaDryRunFileType"), 
         'resultsFilePath': getXmlNodeText, 
         'referenceTime': getXmlNodeInt, 
     }
@@ -560,6 +829,8 @@ class KalturaScheduledTaskJobData(KalturaJobData):
         kparams = KalturaJobData.toParams(self)
         kparams.put("objectType", "KalturaScheduledTaskJobData")
         kparams.addIntIfDefined("maxResults", self.maxResults)
+        kparams.addIntIfDefined("totalCount", self.totalCount)
+        kparams.addIntEnumIfDefined("fileFormat", self.fileFormat)
         kparams.addStringIfDefined("resultsFilePath", self.resultsFilePath)
         kparams.addIntIfDefined("referenceTime", self.referenceTime)
         return kparams
@@ -569,6 +840,18 @@ class KalturaScheduledTaskJobData(KalturaJobData):
 
     def setMaxResults(self, newMaxResults):
         self.maxResults = newMaxResults
+
+    def getTotalCount(self):
+        return self.totalCount
+
+    def setTotalCount(self, newTotalCount):
+        self.totalCount = newTotalCount
+
+    def getFileFormat(self):
+        return self.fileFormat
+
+    def setFileFormat(self, newFileFormat):
+        self.fileFormat = newFileFormat
 
     def getResultsFilePath(self):
         return self.resultsFilePath
@@ -602,7 +885,8 @@ class KalturaScheduledTaskProfileBaseFilter(KalturaFilter):
             updatedAtGreaterThanOrEqual=NotImplemented,
             updatedAtLessThanOrEqual=NotImplemented,
             lastExecutionStartedAtGreaterThanOrEqual=NotImplemented,
-            lastExecutionStartedAtLessThanOrEqual=NotImplemented):
+            lastExecutionStartedAtLessThanOrEqual=NotImplemented,
+            lastExecutionStartedAtLessThanOrEqualOrNull=NotImplemented):
         KalturaFilter.__init__(self,
             orderBy,
             advancedSearch)
@@ -649,6 +933,9 @@ class KalturaScheduledTaskProfileBaseFilter(KalturaFilter):
         # @var int
         self.lastExecutionStartedAtLessThanOrEqual = lastExecutionStartedAtLessThanOrEqual
 
+        # @var int
+        self.lastExecutionStartedAtLessThanOrEqualOrNull = lastExecutionStartedAtLessThanOrEqualOrNull
+
 
     PROPERTY_LOADERS = {
         'idEqual': getXmlNodeInt, 
@@ -665,6 +952,7 @@ class KalturaScheduledTaskProfileBaseFilter(KalturaFilter):
         'updatedAtLessThanOrEqual': getXmlNodeInt, 
         'lastExecutionStartedAtGreaterThanOrEqual': getXmlNodeInt, 
         'lastExecutionStartedAtLessThanOrEqual': getXmlNodeInt, 
+        'lastExecutionStartedAtLessThanOrEqualOrNull': getXmlNodeInt, 
     }
 
     def fromXml(self, node):
@@ -688,6 +976,7 @@ class KalturaScheduledTaskProfileBaseFilter(KalturaFilter):
         kparams.addIntIfDefined("updatedAtLessThanOrEqual", self.updatedAtLessThanOrEqual)
         kparams.addIntIfDefined("lastExecutionStartedAtGreaterThanOrEqual", self.lastExecutionStartedAtGreaterThanOrEqual)
         kparams.addIntIfDefined("lastExecutionStartedAtLessThanOrEqual", self.lastExecutionStartedAtLessThanOrEqual)
+        kparams.addIntIfDefined("lastExecutionStartedAtLessThanOrEqualOrNull", self.lastExecutionStartedAtLessThanOrEqualOrNull)
         return kparams
 
     def getIdEqual(self):
@@ -774,6 +1063,12 @@ class KalturaScheduledTaskProfileBaseFilter(KalturaFilter):
     def setLastExecutionStartedAtLessThanOrEqual(self, newLastExecutionStartedAtLessThanOrEqual):
         self.lastExecutionStartedAtLessThanOrEqual = newLastExecutionStartedAtLessThanOrEqual
 
+    def getLastExecutionStartedAtLessThanOrEqualOrNull(self):
+        return self.lastExecutionStartedAtLessThanOrEqualOrNull
+
+    def setLastExecutionStartedAtLessThanOrEqualOrNull(self, newLastExecutionStartedAtLessThanOrEqualOrNull):
+        self.lastExecutionStartedAtLessThanOrEqualOrNull = newLastExecutionStartedAtLessThanOrEqualOrNull
+
 
 # @package Kaltura
 # @subpackage Client
@@ -790,7 +1085,7 @@ class KalturaScheduledTaskProfileListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'objects': (KalturaObjectFactory.createArray, KalturaScheduledTaskProfile), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaScheduledTaskProfile'), 
     }
 
     def fromXml(self, node):
@@ -862,7 +1157,8 @@ class KalturaScheduledTaskProfileFilter(KalturaScheduledTaskProfileBaseFilter):
             updatedAtGreaterThanOrEqual=NotImplemented,
             updatedAtLessThanOrEqual=NotImplemented,
             lastExecutionStartedAtGreaterThanOrEqual=NotImplemented,
-            lastExecutionStartedAtLessThanOrEqual=NotImplemented):
+            lastExecutionStartedAtLessThanOrEqual=NotImplemented,
+            lastExecutionStartedAtLessThanOrEqualOrNull=NotImplemented):
         KalturaScheduledTaskProfileBaseFilter.__init__(self,
             orderBy,
             advancedSearch,
@@ -879,7 +1175,8 @@ class KalturaScheduledTaskProfileFilter(KalturaScheduledTaskProfileBaseFilter):
             updatedAtGreaterThanOrEqual,
             updatedAtLessThanOrEqual,
             lastExecutionStartedAtGreaterThanOrEqual,
-            lastExecutionStartedAtLessThanOrEqual)
+            lastExecutionStartedAtLessThanOrEqual,
+            lastExecutionStartedAtLessThanOrEqualOrNull)
 
 
     PROPERTY_LOADERS = {
@@ -910,44 +1207,41 @@ class KalturaScheduledTaskProfileService(KalturaServiceBase):
 
         kparams = KalturaParams()
         kparams.addObjectIfDefined("scheduledTaskProfile", scheduledTaskProfile)
-        self.client.queueServiceActionCall("scheduledtask_scheduledtaskprofile", "add", KalturaScheduledTaskProfile, kparams)
+        self.client.queueServiceActionCall("scheduledtask_scheduledtaskprofile", "add", "KalturaScheduledTaskProfile", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaScheduledTaskProfile)
-
-    def get(self, id):
-        """Retrieve a scheduled task profile by id"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("scheduledtask_scheduledtaskprofile", "get", KalturaScheduledTaskProfile, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaScheduledTaskProfile)
-
-    def update(self, id, scheduledTaskProfile):
-        """Update an existing scheduled task profile"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        kparams.addObjectIfDefined("scheduledTaskProfile", scheduledTaskProfile)
-        self.client.queueServiceActionCall("scheduledtask_scheduledtaskprofile", "update", KalturaScheduledTaskProfile, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaScheduledTaskProfile)
+        return KalturaObjectFactory.create(resultNode, 'KalturaScheduledTaskProfile')
 
     def delete(self, id):
         """Delete a scheduled task profile"""
 
         kparams = KalturaParams()
         kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("scheduledtask_scheduledtaskprofile", "delete", None, kparams)
+        self.client.queueServiceActionCall("scheduledtask_scheduledtaskprofile", "delete", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
+
+    def get(self, id):
+        """Retrieve a scheduled task profile by id"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        self.client.queueServiceActionCall("scheduledtask_scheduledtaskprofile", "get", "KalturaScheduledTaskProfile", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaScheduledTaskProfile')
+
+    def getDryRunResults(self, requestId):
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("requestId", requestId);
+        self.client.queueServiceActionCall("scheduledtask_scheduledtaskprofile", "getDryRunResults", "KalturaObjectListResponse", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaObjectListResponse')
 
     def list(self, filter = NotImplemented, pager = NotImplemented):
         """List scheduled task profiles"""
@@ -955,30 +1249,41 @@ class KalturaScheduledTaskProfileService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addObjectIfDefined("filter", filter)
         kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall("scheduledtask_scheduledtaskprofile", "list", KalturaScheduledTaskProfileListResponse, kparams)
+        self.client.queueServiceActionCall("scheduledtask_scheduledtaskprofile", "list", "KalturaScheduledTaskProfileListResponse", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaScheduledTaskProfileListResponse)
+        return KalturaObjectFactory.create(resultNode, 'KalturaScheduledTaskProfileListResponse')
 
     def requestDryRun(self, scheduledTaskProfileId, maxResults = 500):
         kparams = KalturaParams()
         kparams.addIntIfDefined("scheduledTaskProfileId", scheduledTaskProfileId);
         kparams.addIntIfDefined("maxResults", maxResults);
-        self.client.queueServiceActionCall("scheduledtask_scheduledtaskprofile", "requestDryRun", None, kparams)
+        self.client.queueServiceActionCall("scheduledtask_scheduledtaskprofile", "requestDryRun", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
         return getXmlNodeInt(resultNode)
 
-    def getDryRunResults(self, requestId):
+    def serveDryRunResults(self, requestId):
+        """Serves dry run results by its request id"""
+
         kparams = KalturaParams()
         kparams.addIntIfDefined("requestId", requestId);
-        self.client.queueServiceActionCall("scheduledtask_scheduledtaskprofile", "getDryRunResults", KalturaObjectListResponse, kparams)
+        self.client.queueServiceActionCall('scheduledtask_scheduledtaskprofile', 'serveDryRunResults', None ,kparams)
+        return self.client.getServeUrl()
+
+    def update(self, id, scheduledTaskProfile):
+        """Update an existing scheduled task profile"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        kparams.addObjectIfDefined("scheduledTaskProfile", scheduledTaskProfile)
+        self.client.queueServiceActionCall("scheduledtask_scheduledtaskprofile", "update", "KalturaScheduledTaskProfile", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaObjectListResponse)
+        return KalturaObjectFactory.create(resultNode, 'KalturaScheduledTaskProfile')
 
 ########## main ##########
 class KalturaScheduledTaskClientPlugin(KalturaClientPlugin):
@@ -995,11 +1300,13 @@ class KalturaScheduledTaskClientPlugin(KalturaClientPlugin):
     # @return array<KalturaServiceBase>
     def getServices(self):
         return {
+            'scheduledTaskProfile': KalturaScheduledTaskProfileService,
         }
 
     def getEnums(self):
         return {
             'KalturaDeleteFlavorsLogicType': KalturaDeleteFlavorsLogicType,
+            'KalturaDryRunFileType': KalturaDryRunFileType,
             'KalturaScheduledTaskAddOrRemoveType': KalturaScheduledTaskAddOrRemoveType,
             'KalturaScheduledTaskProfileStatus': KalturaScheduledTaskProfileStatus,
             'KalturaObjectFilterEngineType': KalturaObjectFilterEngineType,
@@ -1015,7 +1322,9 @@ class KalturaScheduledTaskClientPlugin(KalturaClientPlugin):
             'KalturaDeleteEntryFlavorsObjectTask': KalturaDeleteEntryFlavorsObjectTask,
             'KalturaDeleteEntryObjectTask': KalturaDeleteEntryObjectTask,
             'KalturaDeleteLocalContentObjectTask': KalturaDeleteLocalContentObjectTask,
+            'KalturaMailNotificationObjectTask': KalturaMailNotificationObjectTask,
             'KalturaModifyCategoriesObjectTask': KalturaModifyCategoriesObjectTask,
+            'KalturaModifyEntryObjectTask': KalturaModifyEntryObjectTask,
             'KalturaScheduledTaskJobData': KalturaScheduledTaskJobData,
             'KalturaScheduledTaskProfileBaseFilter': KalturaScheduledTaskProfileBaseFilter,
             'KalturaScheduledTaskProfileListResponse': KalturaScheduledTaskProfileListResponse,

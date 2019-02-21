@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,8 +27,21 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 ########## classes ##########
@@ -65,16 +78,27 @@ class KalturaBulkService(KalturaServiceBase):
     def __init__(self, client = None):
         KalturaServiceBase.__init__(self, client)
 
+    def abort(self, id):
+        """Aborts the bulk upload and all its child jobs"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        self.client.queueServiceActionCall("bulkupload_bulk", "abort", "KalturaBulkUpload", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaBulkUpload')
+
     def get(self, id):
         """Get bulk upload batch job by id"""
 
         kparams = KalturaParams()
         kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("bulkupload_bulk", "get", KalturaBulkUpload, kparams)
+        self.client.queueServiceActionCall("bulkupload_bulk", "get", "KalturaBulkUpload", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaBulkUpload)
+        return KalturaObjectFactory.create(resultNode, 'KalturaBulkUpload')
 
     def list(self, bulkUploadFilter = NotImplemented, pager = NotImplemented):
         """List bulk upload batch jobs"""
@@ -82,11 +106,11 @@ class KalturaBulkService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addObjectIfDefined("bulkUploadFilter", bulkUploadFilter)
         kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall("bulkupload_bulk", "list", KalturaBulkUploadListResponse, kparams)
+        self.client.queueServiceActionCall("bulkupload_bulk", "list", "KalturaBulkUploadListResponse", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaBulkUploadListResponse)
+        return KalturaObjectFactory.create(resultNode, 'KalturaBulkUploadListResponse')
 
     def serve(self, id):
         """serve action returns the original file."""
@@ -104,17 +128,6 @@ class KalturaBulkService(KalturaServiceBase):
         self.client.queueServiceActionCall('bulkupload_bulk', 'serveLog', None ,kparams)
         return self.client.getServeUrl()
 
-    def abort(self, id):
-        """Aborts the bulk upload and all its child jobs"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("bulkupload_bulk", "abort", KalturaBulkUpload, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaBulkUpload)
-
 ########## main ##########
 class KalturaBulkUploadClientPlugin(KalturaClientPlugin):
     # KalturaBulkUploadClientPlugin
@@ -130,6 +143,7 @@ class KalturaBulkUploadClientPlugin(KalturaClientPlugin):
     # @return array<KalturaServiceBase>
     def getServices(self):
         return {
+            'bulk': KalturaBulkService,
         }
 
     def getEnums(self):

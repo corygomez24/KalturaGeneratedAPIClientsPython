@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,9 +27,22 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from EventNotification import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from .EventNotification import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -162,7 +175,7 @@ class KalturaHttpNotification(KalturaObjectBase):
 
 
     PROPERTY_LOADERS = {
-        'object': (KalturaObjectFactory.create, KalturaObjectBase), 
+        'object': (KalturaObjectFactory.create, 'KalturaObjectBase'), 
         'eventObjectType': (KalturaEnumsFactory.createString, "KalturaEventNotificationEventObjectType"), 
         'eventNotificationJobId': getXmlNodeInt, 
         'templateId': getXmlNodeInt, 
@@ -284,7 +297,7 @@ class KalturaHttpNotificationDataText(KalturaHttpNotificationData):
 
 
     PROPERTY_LOADERS = {
-        'content': (KalturaObjectFactory.create, KalturaStringValue), 
+        'content': (KalturaObjectFactory.create, 'KalturaStringValue'), 
     }
 
     def fromXml(self, node):
@@ -313,7 +326,8 @@ class KalturaHttpNotificationObjectData(KalturaHttpNotificationData):
             apiObjectType=NotImplemented,
             format=NotImplemented,
             ignoreNull=NotImplemented,
-            code=NotImplemented):
+            code=NotImplemented,
+            dataStringReplacements=NotImplemented):
         KalturaHttpNotificationData.__init__(self)
 
         # Kaltura API object type
@@ -332,12 +346,17 @@ class KalturaHttpNotificationObjectData(KalturaHttpNotificationData):
         # @var string
         self.code = code
 
+        # An array of pattern-replacement pairs used for data string regex replacements
+        # @var array of KalturaKeyValue
+        self.dataStringReplacements = dataStringReplacements
+
 
     PROPERTY_LOADERS = {
         'apiObjectType': getXmlNodeText, 
         'format': (KalturaEnumsFactory.createInt, "KalturaResponseType"), 
         'ignoreNull': getXmlNodeBool, 
         'code': getXmlNodeText, 
+        'dataStringReplacements': (KalturaObjectFactory.createArray, 'KalturaKeyValue'), 
     }
 
     def fromXml(self, node):
@@ -351,6 +370,7 @@ class KalturaHttpNotificationObjectData(KalturaHttpNotificationData):
         kparams.addIntEnumIfDefined("format", self.format)
         kparams.addBoolIfDefined("ignoreNull", self.ignoreNull)
         kparams.addStringIfDefined("code", self.code)
+        kparams.addArrayIfDefined("dataStringReplacements", self.dataStringReplacements)
         return kparams
 
     def getApiObjectType(self):
@@ -376,6 +396,12 @@ class KalturaHttpNotificationObjectData(KalturaHttpNotificationData):
 
     def setCode(self, newCode):
         self.code = newCode
+
+    def getDataStringReplacements(self):
+        return self.dataStringReplacements
+
+    def setDataStringReplacements(self, newDataStringReplacements):
+        self.dataStringReplacements = newDataStringReplacements
 
 
 # @package Kaltura
@@ -512,7 +538,7 @@ class KalturaHttpNotificationTemplate(KalturaEventNotificationTemplate):
     PROPERTY_LOADERS = {
         'url': getXmlNodeText, 
         'method': (KalturaEnumsFactory.createInt, "KalturaHttpNotificationMethod"), 
-        'data': (KalturaObjectFactory.create, KalturaHttpNotificationData), 
+        'data': (KalturaObjectFactory.create, 'KalturaHttpNotificationData'), 
         'timeout': getXmlNodeInt, 
         'connectTimeout': getXmlNodeInt, 
         'username': getXmlNodeText, 
@@ -527,7 +553,7 @@ class KalturaHttpNotificationTemplate(KalturaEventNotificationTemplate):
         'sslKeyType': (KalturaEnumsFactory.createString, "KalturaHttpNotificationSslKeyType"), 
         'sslKey': getXmlNodeText, 
         'sslKeyPassword': getXmlNodeText, 
-        'customHeaders': (KalturaObjectFactory.createArray, KalturaKeyValue), 
+        'customHeaders': (KalturaObjectFactory.createArray, 'KalturaKeyValue'), 
     }
 
     def fromXml(self, node):
@@ -792,7 +818,7 @@ class KalturaHttpNotificationDispatchJobData(KalturaEventNotificationDispatchJob
         'sslKeyType': (KalturaEnumsFactory.createString, "KalturaHttpNotificationSslKeyType"), 
         'sslKey': getXmlNodeText, 
         'sslKeyPassword': getXmlNodeText, 
-        'customHeaders': (KalturaObjectFactory.createArray, KalturaKeyValue), 
+        'customHeaders': (KalturaObjectFactory.createArray, 'KalturaKeyValue'), 
         'signSecret': getXmlNodeText, 
     }
 

@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,9 +27,23 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from Integration import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from .Integration import *
+from .Transcript import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 ########## classes ##########
@@ -45,7 +59,8 @@ class KalturaVoicebaseJobProviderData(KalturaIntegrationJobProviderData):
             apiPassword=NotImplemented,
             spokenLanguage=NotImplemented,
             fileLocation=NotImplemented,
-            replaceMediaContent=NotImplemented):
+            replaceMediaContent=NotImplemented,
+            additionalParameters=NotImplemented):
         KalturaIntegrationJobProviderData.__init__(self)
 
         # Entry ID
@@ -87,6 +102,11 @@ class KalturaVoicebaseJobProviderData(KalturaIntegrationJobProviderData):
         # @var bool
         self.replaceMediaContent = replaceMediaContent
 
+        # additional parameters to send to VoiceBase
+        # @var string
+        # @readonly
+        self.additionalParameters = additionalParameters
+
 
     PROPERTY_LOADERS = {
         'entryId': getXmlNodeText, 
@@ -98,6 +118,7 @@ class KalturaVoicebaseJobProviderData(KalturaIntegrationJobProviderData):
         'spokenLanguage': (KalturaEnumsFactory.createString, "KalturaLanguage"), 
         'fileLocation': getXmlNodeText, 
         'replaceMediaContent': getXmlNodeBool, 
+        'additionalParameters': getXmlNodeText, 
     }
 
     def fromXml(self, node):
@@ -159,6 +180,9 @@ class KalturaVoicebaseJobProviderData(KalturaIntegrationJobProviderData):
 
     def setReplaceMediaContent(self, newReplaceMediaContent):
         self.replaceMediaContent = newReplaceMediaContent
+
+    def getAdditionalParameters(self):
+        return self.additionalParameters
 
 
 ########## services ##########

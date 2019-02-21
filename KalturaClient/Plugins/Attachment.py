@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,8 +27,21 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -71,6 +84,7 @@ class KalturaAttachmentType(object):
     TEXT = "1"
     MEDIA = "2"
     DOCUMENT = "3"
+    JSON = "4"
 
     def __init__(self, value):
         self.value = value
@@ -191,7 +205,7 @@ class KalturaAttachmentAssetListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'objects': (KalturaObjectFactory.createArray, KalturaAttachmentAsset), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaAttachmentAsset'), 
     }
 
     def fromXml(self, node):
@@ -205,6 +219,30 @@ class KalturaAttachmentAssetListResponse(KalturaListResponse):
 
     def getObjects(self):
         return self.objects
+
+
+# @package Kaltura
+# @subpackage Client
+class KalturaAttachmentServeOptions(KalturaAssetServeOptions):
+    def __init__(self,
+            download=NotImplemented,
+            referrer=NotImplemented):
+        KalturaAssetServeOptions.__init__(self,
+            download,
+            referrer)
+
+
+    PROPERTY_LOADERS = {
+    }
+
+    def fromXml(self, node):
+        KalturaAssetServeOptions.fromXml(self, node)
+        self.fromXmlImpl(node, KalturaAttachmentServeOptions.PROPERTY_LOADERS)
+
+    def toParams(self):
+        kparams = KalturaAssetServeOptions.toParams(self)
+        kparams.put("objectType", "KalturaAttachmentServeOptions")
+        return kparams
 
 
 # @package Kaltura
@@ -230,6 +268,7 @@ class KalturaAttachmentAssetBaseFilter(KalturaAssetFilter):
             updatedAtLessThanOrEqual=NotImplemented,
             deletedAtGreaterThanOrEqual=NotImplemented,
             deletedAtLessThanOrEqual=NotImplemented,
+            typeIn=NotImplemented,
             formatEqual=NotImplemented,
             formatIn=NotImplemented,
             statusEqual=NotImplemented,
@@ -254,7 +293,8 @@ class KalturaAttachmentAssetBaseFilter(KalturaAssetFilter):
             updatedAtGreaterThanOrEqual,
             updatedAtLessThanOrEqual,
             deletedAtGreaterThanOrEqual,
-            deletedAtLessThanOrEqual)
+            deletedAtLessThanOrEqual,
+            typeIn)
 
         # @var KalturaAttachmentType
         self.formatEqual = formatEqual
@@ -348,6 +388,7 @@ class KalturaAttachmentAssetFilter(KalturaAttachmentAssetBaseFilter):
             updatedAtLessThanOrEqual=NotImplemented,
             deletedAtGreaterThanOrEqual=NotImplemented,
             deletedAtLessThanOrEqual=NotImplemented,
+            typeIn=NotImplemented,
             formatEqual=NotImplemented,
             formatIn=NotImplemented,
             statusEqual=NotImplemented,
@@ -373,6 +414,7 @@ class KalturaAttachmentAssetFilter(KalturaAttachmentAssetBaseFilter):
             updatedAtLessThanOrEqual,
             deletedAtGreaterThanOrEqual,
             deletedAtLessThanOrEqual,
+            typeIn,
             formatEqual,
             formatIn,
             statusEqual,
@@ -409,35 +451,39 @@ class KalturaAttachmentAssetService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addStringIfDefined("entryId", entryId)
         kparams.addObjectIfDefined("attachmentAsset", attachmentAsset)
-        self.client.queueServiceActionCall("attachment_attachmentasset", "add", KalturaAttachmentAsset, kparams)
+        self.client.queueServiceActionCall("attachment_attachmentasset", "add", "KalturaAttachmentAsset", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaAttachmentAsset)
+        return KalturaObjectFactory.create(resultNode, 'KalturaAttachmentAsset')
 
-    def setContent(self, id, contentResource):
-        """Update content of attachment asset"""
+    def delete(self, attachmentAssetId):
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("attachmentAssetId", attachmentAssetId)
+        self.client.queueServiceActionCall("attachment_attachmentasset", "delete", "None", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+
+    def get(self, attachmentAssetId):
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("attachmentAssetId", attachmentAssetId)
+        self.client.queueServiceActionCall("attachment_attachmentasset", "get", "KalturaAttachmentAsset", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaAttachmentAsset')
+
+    def getRemotePaths(self, id):
+        """Get remote storage existing paths for the asset"""
 
         kparams = KalturaParams()
         kparams.addStringIfDefined("id", id)
-        kparams.addObjectIfDefined("contentResource", contentResource)
-        self.client.queueServiceActionCall("attachment_attachmentasset", "setContent", KalturaAttachmentAsset, kparams)
+        self.client.queueServiceActionCall("attachment_attachmentasset", "getRemotePaths", "KalturaRemotePathListResponse", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaAttachmentAsset)
-
-    def update(self, id, attachmentAsset):
-        """Update attachment asset"""
-
-        kparams = KalturaParams()
-        kparams.addStringIfDefined("id", id)
-        kparams.addObjectIfDefined("attachmentAsset", attachmentAsset)
-        self.client.queueServiceActionCall("attachment_attachmentasset", "update", KalturaAttachmentAsset, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaAttachmentAsset)
+        return KalturaObjectFactory.create(resultNode, 'KalturaRemotePathListResponse')
 
     def getUrl(self, id, storageId = NotImplemented):
         """Get download URL for the asset"""
@@ -445,39 +491,11 @@ class KalturaAttachmentAssetService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addStringIfDefined("id", id)
         kparams.addIntIfDefined("storageId", storageId);
-        self.client.queueServiceActionCall("attachment_attachmentasset", "getUrl", None, kparams)
+        self.client.queueServiceActionCall("attachment_attachmentasset", "getUrl", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
         return getXmlNodeText(resultNode)
-
-    def getRemotePaths(self, id):
-        """Get remote storage existing paths for the asset"""
-
-        kparams = KalturaParams()
-        kparams.addStringIfDefined("id", id)
-        self.client.queueServiceActionCall("attachment_attachmentasset", "getRemotePaths", KalturaRemotePathListResponse, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaRemotePathListResponse)
-
-    def serve(self, attachmentAssetId):
-        """Serves attachment by its id"""
-
-        kparams = KalturaParams()
-        kparams.addStringIfDefined("attachmentAssetId", attachmentAssetId)
-        self.client.queueServiceActionCall('attachment_attachmentasset', 'serve', None ,kparams)
-        return self.client.getServeUrl()
-
-    def get(self, attachmentAssetId):
-        kparams = KalturaParams()
-        kparams.addStringIfDefined("attachmentAssetId", attachmentAssetId)
-        self.client.queueServiceActionCall("attachment_attachmentasset", "get", KalturaAttachmentAsset, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaAttachmentAsset)
 
     def list(self, filter = NotImplemented, pager = NotImplemented):
         """List attachment Assets by filter and pager"""
@@ -485,19 +503,44 @@ class KalturaAttachmentAssetService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addObjectIfDefined("filter", filter)
         kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall("attachment_attachmentasset", "list", KalturaAttachmentAssetListResponse, kparams)
+        self.client.queueServiceActionCall("attachment_attachmentasset", "list", "KalturaAttachmentAssetListResponse", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaAttachmentAssetListResponse)
+        return KalturaObjectFactory.create(resultNode, 'KalturaAttachmentAssetListResponse')
 
-    def delete(self, attachmentAssetId):
+    def serve(self, attachmentAssetId, serveOptions = NotImplemented):
+        """Serves attachment by its id"""
+
         kparams = KalturaParams()
         kparams.addStringIfDefined("attachmentAssetId", attachmentAssetId)
-        self.client.queueServiceActionCall("attachment_attachmentasset", "delete", None, kparams)
+        kparams.addObjectIfDefined("serveOptions", serveOptions)
+        self.client.queueServiceActionCall('attachment_attachmentasset', 'serve', None ,kparams)
+        return self.client.getServeUrl()
+
+    def setContent(self, id, contentResource):
+        """Update content of attachment asset"""
+
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("id", id)
+        kparams.addObjectIfDefined("contentResource", contentResource)
+        self.client.queueServiceActionCall("attachment_attachmentasset", "setContent", "KalturaAttachmentAsset", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaAttachmentAsset')
+
+    def update(self, id, attachmentAsset):
+        """Update attachment asset"""
+
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("id", id)
+        kparams.addObjectIfDefined("attachmentAsset", attachmentAsset)
+        self.client.queueServiceActionCall("attachment_attachmentasset", "update", "KalturaAttachmentAsset", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaAttachmentAsset')
 
 ########## main ##########
 class KalturaAttachmentClientPlugin(KalturaClientPlugin):
@@ -514,6 +557,7 @@ class KalturaAttachmentClientPlugin(KalturaClientPlugin):
     # @return array<KalturaServiceBase>
     def getServices(self):
         return {
+            'attachmentAsset': KalturaAttachmentAssetService,
         }
 
     def getEnums(self):
@@ -527,6 +571,7 @@ class KalturaAttachmentClientPlugin(KalturaClientPlugin):
         return {
             'KalturaAttachmentAsset': KalturaAttachmentAsset,
             'KalturaAttachmentAssetListResponse': KalturaAttachmentAssetListResponse,
+            'KalturaAttachmentServeOptions': KalturaAttachmentServeOptions,
             'KalturaAttachmentAssetBaseFilter': KalturaAttachmentAssetBaseFilter,
             'KalturaAttachmentAssetFilter': KalturaAttachmentAssetFilter,
         }

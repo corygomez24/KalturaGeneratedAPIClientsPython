@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,9 +27,23 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from Integration import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from .Integration import *
+from .Transcript import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -71,7 +85,8 @@ class KalturaCielo24JobProviderData(KalturaIntegrationJobProviderData):
             password=NotImplemented,
             baseUrl=NotImplemented,
             spokenLanguage=NotImplemented,
-            replaceMediaContent=NotImplemented):
+            replaceMediaContent=NotImplemented,
+            additionalParameters=NotImplemented):
         KalturaIntegrationJobProviderData.__init__(self)
 
         # Entry ID
@@ -115,6 +130,10 @@ class KalturaCielo24JobProviderData(KalturaIntegrationJobProviderData):
         # @var bool
         self.replaceMediaContent = replaceMediaContent
 
+        # additional parameters to send to Cielo24
+        # @var string
+        self.additionalParameters = additionalParameters
+
 
     PROPERTY_LOADERS = {
         'entryId': getXmlNodeText, 
@@ -127,6 +146,7 @@ class KalturaCielo24JobProviderData(KalturaIntegrationJobProviderData):
         'baseUrl': getXmlNodeText, 
         'spokenLanguage': (KalturaEnumsFactory.createString, "KalturaLanguage"), 
         'replaceMediaContent': getXmlNodeBool, 
+        'additionalParameters': getXmlNodeText, 
     }
 
     def fromXml(self, node):
@@ -143,6 +163,7 @@ class KalturaCielo24JobProviderData(KalturaIntegrationJobProviderData):
         kparams.addStringEnumIfDefined("fidelity", self.fidelity)
         kparams.addStringEnumIfDefined("spokenLanguage", self.spokenLanguage)
         kparams.addBoolIfDefined("replaceMediaContent", self.replaceMediaContent)
+        kparams.addStringIfDefined("additionalParameters", self.additionalParameters)
         return kparams
 
     def getEntryId(self):
@@ -195,6 +216,12 @@ class KalturaCielo24JobProviderData(KalturaIntegrationJobProviderData):
 
     def setReplaceMediaContent(self, newReplaceMediaContent):
         self.replaceMediaContent = newReplaceMediaContent
+
+    def getAdditionalParameters(self):
+        return self.additionalParameters
+
+    def setAdditionalParameters(self, newAdditionalParameters):
+        self.additionalParameters = newAdditionalParameters
 
 
 ########## services ##########

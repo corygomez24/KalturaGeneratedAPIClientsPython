@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,9 +27,22 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from Caption import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from .Caption import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 ########## classes ##########
@@ -63,8 +76,8 @@ class KalturaCaptionAssetItem(KalturaObjectBase):
 
 
     PROPERTY_LOADERS = {
-        'asset': (KalturaObjectFactory.create, KalturaCaptionAsset), 
-        'entry': (KalturaObjectFactory.create, KalturaBaseEntry), 
+        'asset': (KalturaObjectFactory.create, 'KalturaCaptionAsset'), 
+        'entry': (KalturaObjectFactory.create, 'KalturaBaseEntry'), 
         'startTime': getXmlNodeInt, 
         'endTime': getXmlNodeInt, 
         'content': getXmlNodeText, 
@@ -130,7 +143,7 @@ class KalturaCaptionAssetItemListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'objects': (KalturaObjectFactory.createArray, KalturaCaptionAssetItem), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaCaptionAssetItem'), 
     }
 
     def fromXml(self, node):
@@ -225,6 +238,7 @@ class KalturaCaptionAssetItemFilter(KalturaCaptionAssetFilter):
             updatedAtLessThanOrEqual=NotImplemented,
             deletedAtGreaterThanOrEqual=NotImplemented,
             deletedAtLessThanOrEqual=NotImplemented,
+            typeIn=NotImplemented,
             captionParamsIdEqual=NotImplemented,
             captionParamsIdIn=NotImplemented,
             formatEqual=NotImplemented,
@@ -266,6 +280,7 @@ class KalturaCaptionAssetItemFilter(KalturaCaptionAssetFilter):
             updatedAtLessThanOrEqual,
             deletedAtGreaterThanOrEqual,
             deletedAtLessThanOrEqual,
+            typeIn,
             captionParamsIdEqual,
             captionParamsIdIn,
             formatEqual,
@@ -443,6 +458,54 @@ class KalturaCaptionAssetItemFilter(KalturaCaptionAssetFilter):
 
 
 ########## services ##########
+
+# @package Kaltura
+# @subpackage Client
+class KalturaCaptionAssetItemService(KalturaServiceBase):
+    """Search caption asset items"""
+
+    def __init__(self, client = None):
+        KalturaServiceBase.__init__(self, client)
+
+    def list(self, captionAssetId, captionAssetItemFilter = NotImplemented, captionAssetItemPager = NotImplemented):
+        """List caption asset items by filter and pager"""
+
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("captionAssetId", captionAssetId)
+        kparams.addObjectIfDefined("captionAssetItemFilter", captionAssetItemFilter)
+        kparams.addObjectIfDefined("captionAssetItemPager", captionAssetItemPager)
+        self.client.queueServiceActionCall("captionsearch_captionassetitem", "list", "KalturaCaptionAssetItemListResponse", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaCaptionAssetItemListResponse')
+
+    def search(self, entryFilter = NotImplemented, captionAssetItemFilter = NotImplemented, captionAssetItemPager = NotImplemented):
+        """Search caption asset items by filter, pager and free text"""
+
+        kparams = KalturaParams()
+        kparams.addObjectIfDefined("entryFilter", entryFilter)
+        kparams.addObjectIfDefined("captionAssetItemFilter", captionAssetItemFilter)
+        kparams.addObjectIfDefined("captionAssetItemPager", captionAssetItemPager)
+        self.client.queueServiceActionCall("captionsearch_captionassetitem", "search", "KalturaCaptionAssetItemListResponse", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaCaptionAssetItemListResponse')
+
+    def searchEntries(self, entryFilter = NotImplemented, captionAssetItemFilter = NotImplemented, captionAssetItemPager = NotImplemented):
+        """Search caption asset items by filter, pager and free text"""
+
+        kparams = KalturaParams()
+        kparams.addObjectIfDefined("entryFilter", entryFilter)
+        kparams.addObjectIfDefined("captionAssetItemFilter", captionAssetItemFilter)
+        kparams.addObjectIfDefined("captionAssetItemPager", captionAssetItemPager)
+        self.client.queueServiceActionCall("captionsearch_captionassetitem", "searchEntries", "KalturaBaseEntryListResponse", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaBaseEntryListResponse')
+
 ########## main ##########
 class KalturaCaptionSearchClientPlugin(KalturaClientPlugin):
     # KalturaCaptionSearchClientPlugin
@@ -458,6 +521,7 @@ class KalturaCaptionSearchClientPlugin(KalturaClientPlugin):
     # @return array<KalturaServiceBase>
     def getServices(self):
         return {
+            'captionAssetItem': KalturaCaptionAssetItemService,
         }
 
     def getEnums(self):

@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,8 +27,21 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 ########## classes ##########
@@ -270,7 +283,7 @@ class KalturaTagListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'objects': (KalturaObjectFactory.createArray, KalturaTag), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaTag'), 
     }
 
     def fromXml(self, node):
@@ -296,21 +309,11 @@ class KalturaTagService(KalturaServiceBase):
     def __init__(self, client = None):
         KalturaServiceBase.__init__(self, client)
 
-    def search(self, tagFilter, pager = NotImplemented):
-        kparams = KalturaParams()
-        kparams.addObjectIfDefined("tagFilter", tagFilter)
-        kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall("tagsearch_tag", "search", KalturaTagListResponse, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaTagListResponse)
-
     def deletePending(self):
         """Action goes over all tags with instanceCount==0 and checks whether they need to be removed from the DB. Returns number of removed tags."""
 
         kparams = KalturaParams()
-        self.client.queueServiceActionCall("tagsearch_tag", "deletePending", None, kparams)
+        self.client.queueServiceActionCall("tagsearch_tag", "deletePending", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
@@ -321,10 +324,20 @@ class KalturaTagService(KalturaServiceBase):
         kparams.addIntIfDefined("categoryId", categoryId);
         kparams.addStringIfDefined("pcToDecrement", pcToDecrement)
         kparams.addStringIfDefined("pcToIncrement", pcToIncrement)
-        self.client.queueServiceActionCall("tagsearch_tag", "indexCategoryEntryTags", None, kparams)
+        self.client.queueServiceActionCall("tagsearch_tag", "indexCategoryEntryTags", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
+
+    def search(self, tagFilter, pager = NotImplemented):
+        kparams = KalturaParams()
+        kparams.addObjectIfDefined("tagFilter", tagFilter)
+        kparams.addObjectIfDefined("pager", pager)
+        self.client.queueServiceActionCall("tagsearch_tag", "search", "KalturaTagListResponse", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaTagListResponse')
 
 ########## main ##########
 class KalturaTagSearchClientPlugin(KalturaClientPlugin):
@@ -341,6 +354,7 @@ class KalturaTagSearchClientPlugin(KalturaClientPlugin):
     # @return array<KalturaServiceBase>
     def getServices(self):
         return {
+            'tag': KalturaTagService,
         }
 
     def getEnums(self):

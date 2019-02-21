@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,10 +27,23 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from BulkUploadXml import *
-from DropFolder import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from .BulkUploadXml import *
+from .DropFolder import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 ########## classes ##########
@@ -54,6 +67,71 @@ class KalturaDropFolderXmlBulkUploadFileHandlerConfig(KalturaDropFolderFileHandl
         kparams = KalturaDropFolderFileHandlerConfig.toParams(self)
         kparams.put("objectType", "KalturaDropFolderXmlBulkUploadFileHandlerConfig")
         return kparams
+
+
+# @package Kaltura
+# @subpackage Client
+class KalturaDropFolderXmlBulkUploadJobData(KalturaBulkUploadXmlJobData):
+    """Represents the Bulk upload job data for drop folder xml bulk upload"""
+
+    def __init__(self,
+            userId=NotImplemented,
+            uploadedBy=NotImplemented,
+            conversionProfileId=NotImplemented,
+            resultsFileLocalPath=NotImplemented,
+            resultsFileUrl=NotImplemented,
+            numOfEntries=NotImplemented,
+            numOfObjects=NotImplemented,
+            filePath=NotImplemented,
+            bulkUploadObjectType=NotImplemented,
+            fileName=NotImplemented,
+            objectData=NotImplemented,
+            type=NotImplemented,
+            emailRecipients=NotImplemented,
+            numOfErrorObjects=NotImplemented,
+            privileges=NotImplemented,
+            dropFolderId=NotImplemented):
+        KalturaBulkUploadXmlJobData.__init__(self,
+            userId,
+            uploadedBy,
+            conversionProfileId,
+            resultsFileLocalPath,
+            resultsFileUrl,
+            numOfEntries,
+            numOfObjects,
+            filePath,
+            bulkUploadObjectType,
+            fileName,
+            objectData,
+            type,
+            emailRecipients,
+            numOfErrorObjects,
+            privileges)
+
+        # the job drop folder id
+        # @var int
+        self.dropFolderId = dropFolderId
+
+
+    PROPERTY_LOADERS = {
+        'dropFolderId': getXmlNodeInt, 
+    }
+
+    def fromXml(self, node):
+        KalturaBulkUploadXmlJobData.fromXml(self, node)
+        self.fromXmlImpl(node, KalturaDropFolderXmlBulkUploadJobData.PROPERTY_LOADERS)
+
+    def toParams(self):
+        kparams = KalturaBulkUploadXmlJobData.toParams(self)
+        kparams.put("objectType", "KalturaDropFolderXmlBulkUploadJobData")
+        kparams.addIntIfDefined("dropFolderId", self.dropFolderId)
+        return kparams
+
+    def getDropFolderId(self):
+        return self.dropFolderId
+
+    def setDropFolderId(self, newDropFolderId):
+        self.dropFolderId = newDropFolderId
 
 
 ########## services ##########
@@ -81,6 +159,7 @@ class KalturaDropFolderXmlBulkUploadClientPlugin(KalturaClientPlugin):
     def getTypes(self):
         return {
             'KalturaDropFolderXmlBulkUploadFileHandlerConfig': KalturaDropFolderXmlBulkUploadFileHandlerConfig,
+            'KalturaDropFolderXmlBulkUploadJobData': KalturaDropFolderXmlBulkUploadJobData,
         }
 
     # @return string

@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,9 +27,22 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from EventNotification import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from .EventNotification import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -63,6 +76,7 @@ class KalturaEmailNotificationRecipientProviderType(object):
     STATIC_LIST = "1"
     CATEGORY = "2"
     USER = "3"
+    GROUP = "4"
 
     def __init__(self, value):
         self.value = value
@@ -105,8 +119,8 @@ class KalturaEmailNotificationRecipient(KalturaObjectBase):
 
 
     PROPERTY_LOADERS = {
-        'email': (KalturaObjectFactory.create, KalturaStringValue), 
-        'name': (KalturaObjectFactory.create, KalturaStringValue), 
+        'email': (KalturaObjectFactory.create, 'KalturaStringValue'), 
+        'name': (KalturaObjectFactory.create, 'KalturaStringValue'), 
     }
 
     def fromXml(self, node):
@@ -371,7 +385,7 @@ class KalturaEmailNotificationCategoryRecipientJobData(KalturaEmailNotificationR
 
 
     PROPERTY_LOADERS = {
-        'categoryUserFilter': (KalturaObjectFactory.create, KalturaCategoryUserFilter), 
+        'categoryUserFilter': (KalturaObjectFactory.create, 'KalturaCategoryUserFilter'), 
     }
 
     def fromXml(self, node):
@@ -398,6 +412,7 @@ class KalturaEmailNotificationCategoryRecipientProvider(KalturaEmailNotification
 
     def __init__(self,
             categoryId=NotImplemented,
+            categoryIds=NotImplemented,
             categoryUserFilter=NotImplemented):
         KalturaEmailNotificationRecipientProvider.__init__(self)
 
@@ -405,13 +420,18 @@ class KalturaEmailNotificationCategoryRecipientProvider(KalturaEmailNotification
         # @var KalturaStringValue
         self.categoryId = categoryId
 
+        # The IDs of the categories whose subscribers should receive the email notification.
+        # @var KalturaStringValue
+        self.categoryIds = categoryIds
+
         # @var KalturaCategoryUserProviderFilter
         self.categoryUserFilter = categoryUserFilter
 
 
     PROPERTY_LOADERS = {
-        'categoryId': (KalturaObjectFactory.create, KalturaStringValue), 
-        'categoryUserFilter': (KalturaObjectFactory.create, KalturaCategoryUserProviderFilter), 
+        'categoryId': (KalturaObjectFactory.create, 'KalturaStringValue'), 
+        'categoryIds': (KalturaObjectFactory.create, 'KalturaStringValue'), 
+        'categoryUserFilter': (KalturaObjectFactory.create, 'KalturaCategoryUserProviderFilter'), 
     }
 
     def fromXml(self, node):
@@ -422,6 +442,7 @@ class KalturaEmailNotificationCategoryRecipientProvider(KalturaEmailNotification
         kparams = KalturaEmailNotificationRecipientProvider.toParams(self)
         kparams.put("objectType", "KalturaEmailNotificationCategoryRecipientProvider")
         kparams.addObjectIfDefined("categoryId", self.categoryId)
+        kparams.addObjectIfDefined("categoryIds", self.categoryIds)
         kparams.addObjectIfDefined("categoryUserFilter", self.categoryUserFilter)
         return kparams
 
@@ -431,11 +452,87 @@ class KalturaEmailNotificationCategoryRecipientProvider(KalturaEmailNotification
     def setCategoryId(self, newCategoryId):
         self.categoryId = newCategoryId
 
+    def getCategoryIds(self):
+        return self.categoryIds
+
+    def setCategoryIds(self, newCategoryIds):
+        self.categoryIds = newCategoryIds
+
     def getCategoryUserFilter(self):
         return self.categoryUserFilter
 
     def setCategoryUserFilter(self, newCategoryUserFilter):
         self.categoryUserFilter = newCategoryUserFilter
+
+
+# @package Kaltura
+# @subpackage Client
+class KalturaEmailNotificationGroupRecipientJobData(KalturaEmailNotificationRecipientJobData):
+    """JobData representing the dynamic user receipient array"""
+
+    def __init__(self,
+            providerType=NotImplemented,
+            groupId=NotImplemented):
+        KalturaEmailNotificationRecipientJobData.__init__(self,
+            providerType)
+
+        # @var string
+        self.groupId = groupId
+
+
+    PROPERTY_LOADERS = {
+        'groupId': getXmlNodeText, 
+    }
+
+    def fromXml(self, node):
+        KalturaEmailNotificationRecipientJobData.fromXml(self, node)
+        self.fromXmlImpl(node, KalturaEmailNotificationGroupRecipientJobData.PROPERTY_LOADERS)
+
+    def toParams(self):
+        kparams = KalturaEmailNotificationRecipientJobData.toParams(self)
+        kparams.put("objectType", "KalturaEmailNotificationGroupRecipientJobData")
+        kparams.addStringIfDefined("groupId", self.groupId)
+        return kparams
+
+    def getGroupId(self):
+        return self.groupId
+
+    def setGroupId(self, newGroupId):
+        self.groupId = newGroupId
+
+
+# @package Kaltura
+# @subpackage Client
+class KalturaEmailNotificationGroupRecipientProvider(KalturaEmailNotificationRecipientProvider):
+    """API class for recipient provider which constructs a dynamic list of recipients according to a user filter"""
+
+    def __init__(self,
+            groupId=NotImplemented):
+        KalturaEmailNotificationRecipientProvider.__init__(self)
+
+        # @var string
+        self.groupId = groupId
+
+
+    PROPERTY_LOADERS = {
+        'groupId': getXmlNodeText, 
+    }
+
+    def fromXml(self, node):
+        KalturaEmailNotificationRecipientProvider.fromXml(self, node)
+        self.fromXmlImpl(node, KalturaEmailNotificationGroupRecipientProvider.PROPERTY_LOADERS)
+
+    def toParams(self):
+        kparams = KalturaEmailNotificationRecipientProvider.toParams(self)
+        kparams.put("objectType", "KalturaEmailNotificationGroupRecipientProvider")
+        kparams.addStringIfDefined("groupId", self.groupId)
+        return kparams
+
+    def getGroupId(self):
+        return self.groupId
+
+    def setGroupId(self, newGroupId):
+        self.groupId = newGroupId
 
 
 # @package Kaltura
@@ -481,7 +578,7 @@ class KalturaEmailNotificationStaticRecipientJobData(KalturaEmailNotificationRec
 
 
     PROPERTY_LOADERS = {
-        'emailRecipients': (KalturaObjectFactory.createArray, KalturaKeyValue), 
+        'emailRecipients': (KalturaObjectFactory.createArray, 'KalturaKeyValue'), 
     }
 
     def fromXml(self, node):
@@ -516,7 +613,7 @@ class KalturaEmailNotificationStaticRecipientProvider(KalturaEmailNotificationRe
 
 
     PROPERTY_LOADERS = {
-        'emailRecipients': (KalturaObjectFactory.createArray, KalturaEmailNotificationRecipient), 
+        'emailRecipients': (KalturaObjectFactory.createArray, 'KalturaEmailNotificationRecipient'), 
     }
 
     def fromXml(self, node):
@@ -653,15 +750,15 @@ class KalturaEmailNotificationTemplate(KalturaEventNotificationTemplate):
         'body': getXmlNodeText, 
         'fromEmail': getXmlNodeText, 
         'fromName': getXmlNodeText, 
-        'to': (KalturaObjectFactory.create, KalturaEmailNotificationRecipientProvider), 
-        'cc': (KalturaObjectFactory.create, KalturaEmailNotificationRecipientProvider), 
-        'bcc': (KalturaObjectFactory.create, KalturaEmailNotificationRecipientProvider), 
-        'replyTo': (KalturaObjectFactory.create, KalturaEmailNotificationRecipientProvider), 
+        'to': (KalturaObjectFactory.create, 'KalturaEmailNotificationRecipientProvider'), 
+        'cc': (KalturaObjectFactory.create, 'KalturaEmailNotificationRecipientProvider'), 
+        'bcc': (KalturaObjectFactory.create, 'KalturaEmailNotificationRecipientProvider'), 
+        'replyTo': (KalturaObjectFactory.create, 'KalturaEmailNotificationRecipientProvider'), 
         'priority': (KalturaEnumsFactory.createInt, "KalturaEmailNotificationTemplatePriority"), 
         'confirmReadingTo': getXmlNodeText, 
         'hostname': getXmlNodeText, 
         'messageID': getXmlNodeText, 
-        'customHeaders': (KalturaObjectFactory.createArray, KalturaKeyValue), 
+        'customHeaders': (KalturaObjectFactory.createArray, 'KalturaKeyValue'), 
     }
 
     def fromXml(self, node):
@@ -788,7 +885,7 @@ class KalturaEmailNotificationUserRecipientJobData(KalturaEmailNotificationRecip
 
 
     PROPERTY_LOADERS = {
-        'filter': (KalturaObjectFactory.create, KalturaUserFilter), 
+        'filter': (KalturaObjectFactory.create, 'KalturaUserFilter'), 
     }
 
     def fromXml(self, node):
@@ -822,7 +919,7 @@ class KalturaEmailNotificationUserRecipientProvider(KalturaEmailNotificationReci
 
 
     PROPERTY_LOADERS = {
-        'filter': (KalturaObjectFactory.create, KalturaUserFilter), 
+        'filter': (KalturaObjectFactory.create, 'KalturaUserFilter'), 
     }
 
     def fromXml(self, node):
@@ -913,15 +1010,15 @@ class KalturaEmailNotificationDispatchJobData(KalturaEventNotificationDispatchJo
     PROPERTY_LOADERS = {
         'fromEmail': getXmlNodeText, 
         'fromName': getXmlNodeText, 
-        'to': (KalturaObjectFactory.create, KalturaEmailNotificationRecipientJobData), 
-        'cc': (KalturaObjectFactory.create, KalturaEmailNotificationRecipientJobData), 
-        'bcc': (KalturaObjectFactory.create, KalturaEmailNotificationRecipientJobData), 
-        'replyTo': (KalturaObjectFactory.create, KalturaEmailNotificationRecipientJobData), 
+        'to': (KalturaObjectFactory.create, 'KalturaEmailNotificationRecipientJobData'), 
+        'cc': (KalturaObjectFactory.create, 'KalturaEmailNotificationRecipientJobData'), 
+        'bcc': (KalturaObjectFactory.create, 'KalturaEmailNotificationRecipientJobData'), 
+        'replyTo': (KalturaObjectFactory.create, 'KalturaEmailNotificationRecipientJobData'), 
         'priority': (KalturaEnumsFactory.createInt, "KalturaEmailNotificationTemplatePriority"), 
         'confirmReadingTo': getXmlNodeText, 
         'hostname': getXmlNodeText, 
         'messageID': getXmlNodeText, 
-        'customHeaders': (KalturaObjectFactory.createArray, KalturaKeyValue), 
+        'customHeaders': (KalturaObjectFactory.createArray, 'KalturaKeyValue'), 
     }
 
     def fromXml(self, node):
@@ -1149,6 +1246,8 @@ class KalturaEmailNotificationClientPlugin(KalturaClientPlugin):
             'KalturaCategoryUserProviderFilter': KalturaCategoryUserProviderFilter,
             'KalturaEmailNotificationCategoryRecipientJobData': KalturaEmailNotificationCategoryRecipientJobData,
             'KalturaEmailNotificationCategoryRecipientProvider': KalturaEmailNotificationCategoryRecipientProvider,
+            'KalturaEmailNotificationGroupRecipientJobData': KalturaEmailNotificationGroupRecipientJobData,
+            'KalturaEmailNotificationGroupRecipientProvider': KalturaEmailNotificationGroupRecipientProvider,
             'KalturaEmailNotificationParameter': KalturaEmailNotificationParameter,
             'KalturaEmailNotificationStaticRecipientJobData': KalturaEmailNotificationStaticRecipientJobData,
             'KalturaEmailNotificationStaticRecipientProvider': KalturaEmailNotificationStaticRecipientProvider,

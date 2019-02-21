@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,9 +27,22 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from CuePoint import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from .CuePoint import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -186,7 +199,7 @@ class KalturaQuiz(KalturaObjectBase):
 
     PROPERTY_LOADERS = {
         'version': getXmlNodeInt, 
-        'uiAttributes': (KalturaObjectFactory.createArray, KalturaKeyValue), 
+        'uiAttributes': (KalturaObjectFactory.createArray, 'KalturaKeyValue'), 
         'showResultOnAnswer': (KalturaEnumsFactory.createInt, "KalturaNullableBoolean"), 
         'showCorrectKeyOnAnswer': (KalturaEnumsFactory.createInt, "KalturaNullableBoolean"), 
         'allowAnswerUpdate': (KalturaEnumsFactory.createInt, "KalturaNullableBoolean"), 
@@ -277,12 +290,16 @@ class KalturaAnswerCuePoint(KalturaCuePoint):
             forceStop=NotImplemented,
             thumbOffset=NotImplemented,
             systemName=NotImplemented,
+            isMomentary=NotImplemented,
+            copiedFrom=NotImplemented,
             parentId=NotImplemented,
             quizUserEntryId=NotImplemented,
             answerKey=NotImplemented,
+            openAnswer=NotImplemented,
             isCorrect=NotImplemented,
             correctAnswerKeys=NotImplemented,
-            explanation=NotImplemented):
+            explanation=NotImplemented,
+            feedback=NotImplemented):
         KalturaCuePoint.__init__(self,
             id,
             cuePointType,
@@ -299,7 +316,9 @@ class KalturaAnswerCuePoint(KalturaCuePoint):
             partnerSortValue,
             forceStop,
             thumbOffset,
-            systemName)
+            systemName,
+            isMomentary,
+            copiedFrom)
 
         # @var string
         # @insertonly
@@ -311,6 +330,9 @@ class KalturaAnswerCuePoint(KalturaCuePoint):
 
         # @var string
         self.answerKey = answerKey
+
+        # @var string
+        self.openAnswer = openAnswer
 
         # @var KalturaNullableBoolean
         # @readonly
@@ -325,14 +347,19 @@ class KalturaAnswerCuePoint(KalturaCuePoint):
         # @readonly
         self.explanation = explanation
 
+        # @var string
+        self.feedback = feedback
+
 
     PROPERTY_LOADERS = {
         'parentId': getXmlNodeText, 
         'quizUserEntryId': getXmlNodeText, 
         'answerKey': getXmlNodeText, 
+        'openAnswer': getXmlNodeText, 
         'isCorrect': (KalturaEnumsFactory.createInt, "KalturaNullableBoolean"), 
-        'correctAnswerKeys': (KalturaObjectFactory.createArray, KalturaString), 
+        'correctAnswerKeys': (KalturaObjectFactory.createArray, 'KalturaString'), 
         'explanation': getXmlNodeText, 
+        'feedback': getXmlNodeText, 
     }
 
     def fromXml(self, node):
@@ -345,6 +372,8 @@ class KalturaAnswerCuePoint(KalturaCuePoint):
         kparams.addStringIfDefined("parentId", self.parentId)
         kparams.addStringIfDefined("quizUserEntryId", self.quizUserEntryId)
         kparams.addStringIfDefined("answerKey", self.answerKey)
+        kparams.addStringIfDefined("openAnswer", self.openAnswer)
+        kparams.addStringIfDefined("feedback", self.feedback)
         return kparams
 
     def getParentId(self):
@@ -365,6 +394,12 @@ class KalturaAnswerCuePoint(KalturaCuePoint):
     def setAnswerKey(self, newAnswerKey):
         self.answerKey = newAnswerKey
 
+    def getOpenAnswer(self):
+        return self.openAnswer
+
+    def setOpenAnswer(self, newOpenAnswer):
+        self.openAnswer = newOpenAnswer
+
     def getIsCorrect(self):
         return self.isCorrect
 
@@ -373,6 +408,12 @@ class KalturaAnswerCuePoint(KalturaCuePoint):
 
     def getExplanation(self):
         return self.explanation
+
+    def getFeedback(self):
+        return self.feedback
+
+    def setFeedback(self, newFeedback):
+        self.feedback = newFeedback
 
 
 # @package Kaltura
@@ -395,10 +436,15 @@ class KalturaQuestionCuePoint(KalturaCuePoint):
             forceStop=NotImplemented,
             thumbOffset=NotImplemented,
             systemName=NotImplemented,
+            isMomentary=NotImplemented,
+            copiedFrom=NotImplemented,
             optionalAnswers=NotImplemented,
             hint=NotImplemented,
             question=NotImplemented,
-            explanation=NotImplemented):
+            explanation=NotImplemented,
+            questionType=NotImplemented,
+            presentationOrder=NotImplemented,
+            excludeFromScore=NotImplemented):
         KalturaCuePoint.__init__(self,
             id,
             cuePointType,
@@ -415,10 +461,12 @@ class KalturaQuestionCuePoint(KalturaCuePoint):
             partnerSortValue,
             forceStop,
             thumbOffset,
-            systemName)
+            systemName,
+            isMomentary,
+            copiedFrom)
 
         # Array of key value answerKey->optionAnswer objects
-        # @var map
+        # @var array of KalturaOptionalAnswer
         self.optionalAnswers = optionalAnswers
 
         # @var string
@@ -430,12 +478,24 @@ class KalturaQuestionCuePoint(KalturaCuePoint):
         # @var string
         self.explanation = explanation
 
+        # @var KalturaQuestionType
+        self.questionType = questionType
+
+        # @var int
+        self.presentationOrder = presentationOrder
+
+        # @var KalturaNullableBoolean
+        self.excludeFromScore = excludeFromScore
+
 
     PROPERTY_LOADERS = {
-        'optionalAnswers': (KalturaObjectFactory.create, map), 
+        'optionalAnswers': (KalturaObjectFactory.createArray, 'KalturaOptionalAnswer'), 
         'hint': getXmlNodeText, 
         'question': getXmlNodeText, 
         'explanation': getXmlNodeText, 
+        'questionType': (KalturaEnumsFactory.createInt, "KalturaQuestionType"), 
+        'presentationOrder': getXmlNodeInt, 
+        'excludeFromScore': (KalturaEnumsFactory.createInt, "KalturaNullableBoolean"), 
     }
 
     def fromXml(self, node):
@@ -445,10 +505,13 @@ class KalturaQuestionCuePoint(KalturaCuePoint):
     def toParams(self):
         kparams = KalturaCuePoint.toParams(self)
         kparams.put("objectType", "KalturaQuestionCuePoint")
-        kparams.addObjectIfDefined("optionalAnswers", self.optionalAnswers)
+        kparams.addArrayIfDefined("optionalAnswers", self.optionalAnswers)
         kparams.addStringIfDefined("hint", self.hint)
         kparams.addStringIfDefined("question", self.question)
         kparams.addStringIfDefined("explanation", self.explanation)
+        kparams.addIntEnumIfDefined("questionType", self.questionType)
+        kparams.addIntIfDefined("presentationOrder", self.presentationOrder)
+        kparams.addIntEnumIfDefined("excludeFromScore", self.excludeFromScore)
         return kparams
 
     def getOptionalAnswers(self):
@@ -474,6 +537,24 @@ class KalturaQuestionCuePoint(KalturaCuePoint):
 
     def setExplanation(self, newExplanation):
         self.explanation = newExplanation
+
+    def getQuestionType(self):
+        return self.questionType
+
+    def setQuestionType(self, newQuestionType):
+        self.questionType = newQuestionType
+
+    def getPresentationOrder(self):
+        return self.presentationOrder
+
+    def setPresentationOrder(self, newPresentationOrder):
+        self.presentationOrder = newPresentationOrder
+
+    def getExcludeFromScore(self):
+        return self.excludeFromScore
+
+    def setExcludeFromScore(self, newExcludeFromScore):
+        self.excludeFromScore = newExcludeFromScore
 
 
 # @package Kaltura
@@ -523,7 +604,7 @@ class KalturaQuizListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'objects': (KalturaObjectFactory.createArray, KalturaQuiz), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaQuiz'), 
     }
 
     def fromXml(self, node):
@@ -1031,6 +1112,74 @@ class KalturaQuestionCuePointFilter(KalturaQuestionCuePointBaseFilter):
         return kparams
 
 
+# @package Kaltura
+# @subpackage Client
+class KalturaQuizUserEntryFilter(KalturaQuizUserEntryBaseFilter):
+    def __init__(self,
+            orderBy=NotImplemented,
+            advancedSearch=NotImplemented,
+            idEqual=NotImplemented,
+            idIn=NotImplemented,
+            idNotIn=NotImplemented,
+            entryIdEqual=NotImplemented,
+            entryIdIn=NotImplemented,
+            entryIdNotIn=NotImplemented,
+            userIdEqual=NotImplemented,
+            userIdIn=NotImplemented,
+            userIdNotIn=NotImplemented,
+            statusEqual=NotImplemented,
+            createdAtLessThanOrEqual=NotImplemented,
+            createdAtGreaterThanOrEqual=NotImplemented,
+            updatedAtLessThanOrEqual=NotImplemented,
+            updatedAtGreaterThanOrEqual=NotImplemented,
+            typeEqual=NotImplemented,
+            extendedStatusEqual=NotImplemented,
+            extendedStatusIn=NotImplemented,
+            extendedStatusNotIn=NotImplemented,
+            userIdEqualCurrent=NotImplemented,
+            isAnonymous=NotImplemented,
+            privacyContextEqual=NotImplemented,
+            privacyContextIn=NotImplemented):
+        KalturaQuizUserEntryBaseFilter.__init__(self,
+            orderBy,
+            advancedSearch,
+            idEqual,
+            idIn,
+            idNotIn,
+            entryIdEqual,
+            entryIdIn,
+            entryIdNotIn,
+            userIdEqual,
+            userIdIn,
+            userIdNotIn,
+            statusEqual,
+            createdAtLessThanOrEqual,
+            createdAtGreaterThanOrEqual,
+            updatedAtLessThanOrEqual,
+            updatedAtGreaterThanOrEqual,
+            typeEqual,
+            extendedStatusEqual,
+            extendedStatusIn,
+            extendedStatusNotIn,
+            userIdEqualCurrent,
+            isAnonymous,
+            privacyContextEqual,
+            privacyContextIn)
+
+
+    PROPERTY_LOADERS = {
+    }
+
+    def fromXml(self, node):
+        KalturaQuizUserEntryBaseFilter.fromXml(self, node)
+        self.fromXmlImpl(node, KalturaQuizUserEntryFilter.PROPERTY_LOADERS)
+
+    def toParams(self):
+        kparams = KalturaQuizUserEntryBaseFilter.toParams(self)
+        kparams.put("objectType", "KalturaQuizUserEntryFilter")
+        return kparams
+
+
 ########## services ##########
 
 # @package Kaltura
@@ -1047,34 +1196,34 @@ class KalturaQuizService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addStringIfDefined("entryId", entryId)
         kparams.addObjectIfDefined("quiz", quiz)
-        self.client.queueServiceActionCall("quiz_quiz", "add", KalturaQuiz, kparams)
+        self.client.queueServiceActionCall("quiz_quiz", "add", "KalturaQuiz", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaQuiz)
-
-    def update(self, entryId, quiz):
-        """Allows to update a quiz"""
-
-        kparams = KalturaParams()
-        kparams.addStringIfDefined("entryId", entryId)
-        kparams.addObjectIfDefined("quiz", quiz)
-        self.client.queueServiceActionCall("quiz_quiz", "update", KalturaQuiz, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaQuiz)
+        return KalturaObjectFactory.create(resultNode, 'KalturaQuiz')
 
     def get(self, entryId):
         """Allows to get a quiz"""
 
         kparams = KalturaParams()
         kparams.addStringIfDefined("entryId", entryId)
-        self.client.queueServiceActionCall("quiz_quiz", "get", KalturaQuiz, kparams)
+        self.client.queueServiceActionCall("quiz_quiz", "get", "KalturaQuiz", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaQuiz)
+        return KalturaObjectFactory.create(resultNode, 'KalturaQuiz')
+
+    def getUrl(self, entryId, quizOutputType):
+        """sends a with an api request for pdf from quiz object"""
+
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("entryId", entryId)
+        kparams.addIntIfDefined("quizOutputType", quizOutputType);
+        self.client.queueServiceActionCall("quiz_quiz", "getUrl", "None", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return getXmlNodeText(resultNode)
 
     def list(self, filter = NotImplemented, pager = NotImplemented):
         """List quiz objects by filter and pager"""
@@ -1082,11 +1231,11 @@ class KalturaQuizService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addObjectIfDefined("filter", filter)
         kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall("quiz_quiz", "list", KalturaQuizListResponse, kparams)
+        self.client.queueServiceActionCall("quiz_quiz", "list", "KalturaQuizListResponse", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaQuizListResponse)
+        return KalturaObjectFactory.create(resultNode, 'KalturaQuizListResponse')
 
     def serve(self, entryId, quizOutputType):
         """creates a pdf from quiz object
@@ -1099,17 +1248,17 @@ class KalturaQuizService(KalturaServiceBase):
         self.client.queueServiceActionCall('quiz_quiz', 'serve', None ,kparams)
         return self.client.getServeUrl()
 
-    def getUrl(self, entryId, quizOutputType):
-        """sends a with an api request for pdf from quiz object"""
+    def update(self, entryId, quiz):
+        """Allows to update a quiz"""
 
         kparams = KalturaParams()
         kparams.addStringIfDefined("entryId", entryId)
-        kparams.addIntIfDefined("quizOutputType", quizOutputType);
-        self.client.queueServiceActionCall("quiz_quiz", "getUrl", None, kparams)
+        kparams.addObjectIfDefined("quiz", quiz)
+        self.client.queueServiceActionCall("quiz_quiz", "update", "KalturaQuiz", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return getXmlNodeText(resultNode)
+        return KalturaObjectFactory.create(resultNode, 'KalturaQuiz')
 
 ########## main ##########
 class KalturaQuizClientPlugin(KalturaClientPlugin):
@@ -1126,6 +1275,7 @@ class KalturaQuizClientPlugin(KalturaClientPlugin):
     # @return array<KalturaServiceBase>
     def getServices(self):
         return {
+            'quiz': KalturaQuizService,
         }
 
     def getEnums(self):
@@ -1147,6 +1297,7 @@ class KalturaQuizClientPlugin(KalturaClientPlugin):
             'KalturaQuestionCuePointBaseFilter': KalturaQuestionCuePointBaseFilter,
             'KalturaAnswerCuePointFilter': KalturaAnswerCuePointFilter,
             'KalturaQuestionCuePointFilter': KalturaQuestionCuePointFilter,
+            'KalturaQuizUserEntryFilter': KalturaQuizUserEntryFilter,
         }
 
     # @return string

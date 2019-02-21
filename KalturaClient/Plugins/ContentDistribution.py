@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,9 +27,22 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from Metadata import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from .Metadata import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -251,8 +264,35 @@ class KalturaDistributionProviderOrderBy(object):
 # @package Kaltura
 # @subpackage Client
 class KalturaDistributionProviderType(object):
+    ATT_UVERSE = "attUverseDistribution.ATT_UVERSE"
+    AVN = "avnDistribution.AVN"
+    COMCAST_MRSS = "comcastMrssDistribution.COMCAST_MRSS"
+    CROSS_KALTURA = "crossKalturaDistribution.CROSS_KALTURA"
+    DAILYMOTION = "dailymotionDistribution.DAILYMOTION"
+    DOUBLECLICK = "doubleClickDistribution.DOUBLECLICK"
     FACEBOOK = "facebookDistribution.FACEBOOK"
+    FREEWHEEL = "freewheelDistribution.FREEWHEEL"
+    FREEWHEEL_GENERIC = "freewheelGenericDistribution.FREEWHEEL_GENERIC"
+    FTP = "ftpDistribution.FTP"
+    FTP_SCHEDULED = "ftpDistribution.FTP_SCHEDULED"
+    HULU = "huluDistribution.HULU"
     IDETIC = "ideticDistribution.IDETIC"
+    METRO_PCS = "metroPcsDistribution.METRO_PCS"
+    MSN = "msnDistribution.MSN"
+    NDN = "ndnDistribution.NDN"
+    PODCAST = "podcastDistribution.PODCAST"
+    PUSH_TO_NEWS = "pushToNewsDistribution.PUSH_TO_NEWS"
+    QUICKPLAY = "quickPlayDistribution.QUICKPLAY"
+    SYNACOR_HBO = "synacorHboDistribution.SYNACOR_HBO"
+    TIME_WARNER = "timeWarnerDistribution.TIME_WARNER"
+    TVCOM = "tvComDistribution.TVCOM"
+    TVINCI = "tvinciDistribution.TVINCI"
+    UNICORN = "unicornDistribution.UNICORN"
+    UVERSE_CLICK_TO_ORDER = "uverseClickToOrderDistribution.UVERSE_CLICK_TO_ORDER"
+    UVERSE = "uverseDistribution.UVERSE"
+    VERIZON_VCAST = "verizonVcastDistribution.VERIZON_VCAST"
+    YAHOO = "yahooDistribution.YAHOO"
+    YOUTUBE = "youTubeDistribution.YOUTUBE"
     YOUTUBE_API = "youtubeApiDistribution.YOUTUBE_API"
     GENERIC = "1"
     SYNDICATION = "2"
@@ -339,6 +379,16 @@ class KalturaSyndicationDistributionProfileOrderBy(object):
     def getValue(self):
         return self.value
 
+# @package Kaltura
+# @subpackage Client
+class KalturaSyndicationDistributionProviderOrderBy(object):
+
+    def __init__(self, value):
+        self.value = value
+
+    def getValue(self):
+        return self.value
+
 ########## classes ##########
 # @package Kaltura
 # @subpackage Client
@@ -381,7 +431,7 @@ class KalturaAssetDistributionRule(KalturaObjectBase):
 
     PROPERTY_LOADERS = {
         'validationError': getXmlNodeText, 
-        'assetDistributionConditions': (KalturaObjectFactory.createArray, KalturaAssetDistributionCondition), 
+        'assetDistributionConditions': (KalturaObjectFactory.createArray, 'KalturaAssetDistributionCondition'), 
     }
 
     def fromXml(self, node):
@@ -416,6 +466,7 @@ class KalturaDistributionFieldConfig(KalturaObjectBase):
             userFriendlyFieldName=NotImplemented,
             entryMrssXslt=NotImplemented,
             isRequired=NotImplemented,
+            type=NotImplemented,
             updateOnChange=NotImplemented,
             updateParams=NotImplemented,
             isDefault=NotImplemented,
@@ -440,6 +491,9 @@ class KalturaDistributionFieldConfig(KalturaObjectBase):
         # @var KalturaDistributionFieldRequiredStatus
         self.isRequired = isRequired
 
+        # @var string
+        self.type = type
+
         # Trigger distribution update when this field changes or not ?
         # @var bool
         self.updateOnChange = updateOnChange
@@ -463,8 +517,9 @@ class KalturaDistributionFieldConfig(KalturaObjectBase):
         'userFriendlyFieldName': getXmlNodeText, 
         'entryMrssXslt': getXmlNodeText, 
         'isRequired': (KalturaEnumsFactory.createInt, "KalturaDistributionFieldRequiredStatus"), 
+        'type': getXmlNodeText, 
         'updateOnChange': getXmlNodeBool, 
-        'updateParams': (KalturaObjectFactory.createArray, KalturaString), 
+        'updateParams': (KalturaObjectFactory.createArray, 'KalturaString'), 
         'isDefault': getXmlNodeBool, 
         'triggerDeleteOnError': getXmlNodeBool, 
     }
@@ -480,6 +535,7 @@ class KalturaDistributionFieldConfig(KalturaObjectBase):
         kparams.addStringIfDefined("userFriendlyFieldName", self.userFriendlyFieldName)
         kparams.addStringIfDefined("entryMrssXslt", self.entryMrssXslt)
         kparams.addIntEnumIfDefined("isRequired", self.isRequired)
+        kparams.addStringIfDefined("type", self.type)
         kparams.addBoolIfDefined("updateOnChange", self.updateOnChange)
         kparams.addArrayIfDefined("updateParams", self.updateParams)
         kparams.addBoolIfDefined("triggerDeleteOnError", self.triggerDeleteOnError)
@@ -508,6 +564,12 @@ class KalturaDistributionFieldConfig(KalturaObjectBase):
 
     def setIsRequired(self, newIsRequired):
         self.isRequired = newIsRequired
+
+    def getType(self):
+        return self.type
+
+    def setType(self, newType):
+        self.type = newType
 
     def getUpdateOnChange(self):
         return self.updateOnChange
@@ -735,10 +797,10 @@ class KalturaDistributionProfile(KalturaObjectBase):
         'autoCreateThumb': getXmlNodeText, 
         'optionalFlavorParamsIds': getXmlNodeText, 
         'requiredFlavorParamsIds': getXmlNodeText, 
-        'optionalThumbDimensions': (KalturaObjectFactory.createArray, KalturaDistributionThumbDimensions), 
-        'requiredThumbDimensions': (KalturaObjectFactory.createArray, KalturaDistributionThumbDimensions), 
-        'optionalAssetDistributionRules': (KalturaObjectFactory.createArray, KalturaAssetDistributionRule), 
-        'requiredAssetDistributionRules': (KalturaObjectFactory.createArray, KalturaAssetDistributionRule), 
+        'optionalThumbDimensions': (KalturaObjectFactory.createArray, 'KalturaDistributionThumbDimensions'), 
+        'requiredThumbDimensions': (KalturaObjectFactory.createArray, 'KalturaDistributionThumbDimensions'), 
+        'optionalAssetDistributionRules': (KalturaObjectFactory.createArray, 'KalturaAssetDistributionRule'), 
+        'requiredAssetDistributionRules': (KalturaObjectFactory.createArray, 'KalturaAssetDistributionRule'), 
         'sunriseDefaultOffset': getXmlNodeInt, 
         'sunsetDefaultOffset': getXmlNodeInt, 
         'recommendedStorageProfileForDownload': getXmlNodeInt, 
@@ -1317,7 +1379,7 @@ class KalturaEntryDistribution(KalturaObjectBase):
         'remoteId': getXmlNodeText, 
         'plays': getXmlNodeInt, 
         'views': getXmlNodeInt, 
-        'validationErrors': (KalturaObjectFactory.createArray, KalturaDistributionValidationError), 
+        'validationErrors': (KalturaObjectFactory.createArray, 'KalturaDistributionValidationError'), 
         'errorType': (KalturaEnumsFactory.createInt, "KalturaBatchJobErrorTypes"), 
         'errorNumber': getXmlNodeInt, 
         'errorDescription': getXmlNodeText, 
@@ -1869,8 +1931,8 @@ class KalturaGenericDistributionProvider(KalturaDistributionProvider):
         'status': (KalturaEnumsFactory.createInt, "KalturaGenericDistributionProviderStatus"), 
         'optionalFlavorParamsIds': getXmlNodeText, 
         'requiredFlavorParamsIds': getXmlNodeText, 
-        'optionalThumbDimensions': (KalturaObjectFactory.createArray, KalturaDistributionThumbDimensions), 
-        'requiredThumbDimensions': (KalturaObjectFactory.createArray, KalturaDistributionThumbDimensions), 
+        'optionalThumbDimensions': (KalturaObjectFactory.createArray, 'KalturaDistributionThumbDimensions'), 
+        'requiredThumbDimensions': (KalturaObjectFactory.createArray, 'KalturaDistributionThumbDimensions'), 
         'editableFields': getXmlNodeText, 
         'mandatoryFields': getXmlNodeText, 
     }
@@ -2099,8 +2161,8 @@ class KalturaConfigurableDistributionProfile(KalturaDistributionProfile):
 
 
     PROPERTY_LOADERS = {
-        'fieldConfigArray': (KalturaObjectFactory.createArray, KalturaDistributionFieldConfig), 
-        'itemXpathsToExtend': (KalturaObjectFactory.createArray, KalturaExtendingItemMrssParameter), 
+        'fieldConfigArray': (KalturaObjectFactory.createArray, 'KalturaDistributionFieldConfig'), 
+        'itemXpathsToExtend': (KalturaObjectFactory.createArray, 'KalturaExtendingItemMrssParameter'), 
         'useCategoryEntries': getXmlNodeBool, 
     }
 
@@ -2295,15 +2357,15 @@ class KalturaDistributionJobData(KalturaJobData):
 
     PROPERTY_LOADERS = {
         'distributionProfileId': getXmlNodeInt, 
-        'distributionProfile': (KalturaObjectFactory.create, KalturaDistributionProfile), 
+        'distributionProfile': (KalturaObjectFactory.create, 'KalturaDistributionProfile'), 
         'entryDistributionId': getXmlNodeInt, 
-        'entryDistribution': (KalturaObjectFactory.create, KalturaEntryDistribution), 
+        'entryDistribution': (KalturaObjectFactory.create, 'KalturaEntryDistribution'), 
         'remoteId': getXmlNodeText, 
         'providerType': (KalturaEnumsFactory.createString, "KalturaDistributionProviderType"), 
-        'providerData': (KalturaObjectFactory.create, KalturaDistributionJobProviderData), 
+        'providerData': (KalturaObjectFactory.create, 'KalturaDistributionJobProviderData'), 
         'results': getXmlNodeText, 
         'sentData': getXmlNodeText, 
-        'mediaFiles': (KalturaObjectFactory.createArray, KalturaDistributionRemoteMediaFile), 
+        'mediaFiles': (KalturaObjectFactory.createArray, 'KalturaDistributionRemoteMediaFile'), 
     }
 
     def fromXml(self, node):
@@ -2521,7 +2583,7 @@ class KalturaDistributionProfileListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'objects': (KalturaObjectFactory.createArray, KalturaDistributionProfile), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaDistributionProfile'), 
     }
 
     def fromXml(self, node):
@@ -2600,7 +2662,7 @@ class KalturaDistributionProviderListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'objects': (KalturaObjectFactory.createArray, KalturaDistributionProvider), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaDistributionProvider'), 
     }
 
     def fromXml(self, node):
@@ -2850,7 +2912,7 @@ class KalturaDistributionValidationErrorMissingThumbnail(KalturaDistributionVali
 
 
     PROPERTY_LOADERS = {
-        'dimensions': (KalturaObjectFactory.create, KalturaDistributionThumbDimensions), 
+        'dimensions': (KalturaObjectFactory.create, 'KalturaDistributionThumbDimensions'), 
     }
 
     def fromXml(self, node):
@@ -2885,7 +2947,7 @@ class KalturaEntryDistributionListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'objects': (KalturaObjectFactory.createArray, KalturaEntryDistribution), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaEntryDistribution'), 
     }
 
     def fromXml(self, node):
@@ -3043,10 +3105,10 @@ class KalturaGenericDistributionProfile(KalturaDistributionProfile):
 
     PROPERTY_LOADERS = {
         'genericProviderId': getXmlNodeInt, 
-        'submitAction': (KalturaObjectFactory.create, KalturaGenericDistributionProfileAction), 
-        'updateAction': (KalturaObjectFactory.create, KalturaGenericDistributionProfileAction), 
-        'deleteAction': (KalturaObjectFactory.create, KalturaGenericDistributionProfileAction), 
-        'fetchReportAction': (KalturaObjectFactory.create, KalturaGenericDistributionProfileAction), 
+        'submitAction': (KalturaObjectFactory.create, 'KalturaGenericDistributionProfileAction'), 
+        'updateAction': (KalturaObjectFactory.create, 'KalturaGenericDistributionProfileAction'), 
+        'deleteAction': (KalturaObjectFactory.create, 'KalturaGenericDistributionProfileAction'), 
+        'fetchReportAction': (KalturaObjectFactory.create, 'KalturaGenericDistributionProfileAction'), 
         'updateRequiredEntryFields': getXmlNodeText, 
         'updateRequiredMetadataXPaths': getXmlNodeText, 
     }
@@ -3269,7 +3331,7 @@ class KalturaGenericDistributionProviderActionListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'objects': (KalturaObjectFactory.createArray, KalturaGenericDistributionProviderAction), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaGenericDistributionProviderAction'), 
     }
 
     def fromXml(self, node):
@@ -3300,7 +3362,7 @@ class KalturaGenericDistributionProviderListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'objects': (KalturaObjectFactory.createArray, KalturaGenericDistributionProvider), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaGenericDistributionProvider'), 
     }
 
     def fromXml(self, node):
@@ -4696,6 +4758,34 @@ class KalturaSyndicationDistributionProfileFilter(KalturaSyndicationDistribution
         return kparams
 
 
+# @package Kaltura
+# @subpackage Client
+class KalturaSyndicationDistributionProviderFilter(KalturaSyndicationDistributionProviderBaseFilter):
+    def __init__(self,
+            orderBy=NotImplemented,
+            advancedSearch=NotImplemented,
+            typeEqual=NotImplemented,
+            typeIn=NotImplemented):
+        KalturaSyndicationDistributionProviderBaseFilter.__init__(self,
+            orderBy,
+            advancedSearch,
+            typeEqual,
+            typeIn)
+
+
+    PROPERTY_LOADERS = {
+    }
+
+    def fromXml(self, node):
+        KalturaSyndicationDistributionProviderBaseFilter.fromXml(self, node)
+        self.fromXmlImpl(node, KalturaSyndicationDistributionProviderFilter.PROPERTY_LOADERS)
+
+    def toParams(self):
+        kparams = KalturaSyndicationDistributionProviderBaseFilter.toParams(self)
+        kparams.put("objectType", "KalturaSyndicationDistributionProviderFilter")
+        return kparams
+
+
 ########## services ##########
 
 # @package Kaltura
@@ -4711,56 +4801,32 @@ class KalturaDistributionProfileService(KalturaServiceBase):
 
         kparams = KalturaParams()
         kparams.addObjectIfDefined("distributionProfile", distributionProfile)
-        self.client.queueServiceActionCall("contentdistribution_distributionprofile", "add", KalturaDistributionProfile, kparams)
+        self.client.queueServiceActionCall("contentdistribution_distributionprofile", "add", "KalturaDistributionProfile", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaDistributionProfile)
-
-    def get(self, id):
-        """Get Distribution Profile by id"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("contentdistribution_distributionprofile", "get", KalturaDistributionProfile, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaDistributionProfile)
-
-    def update(self, id, distributionProfile):
-        """Update Distribution Profile by id"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        kparams.addObjectIfDefined("distributionProfile", distributionProfile)
-        self.client.queueServiceActionCall("contentdistribution_distributionprofile", "update", KalturaDistributionProfile, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaDistributionProfile)
-
-    def updateStatus(self, id, status):
-        """Update Distribution Profile status by id"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        kparams.addIntIfDefined("status", status);
-        self.client.queueServiceActionCall("contentdistribution_distributionprofile", "updateStatus", KalturaDistributionProfile, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaDistributionProfile)
+        return KalturaObjectFactory.create(resultNode, 'KalturaDistributionProfile')
 
     def delete(self, id):
         """Delete Distribution Profile by id"""
 
         kparams = KalturaParams()
         kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("contentdistribution_distributionprofile", "delete", None, kparams)
+        self.client.queueServiceActionCall("contentdistribution_distributionprofile", "delete", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
+
+    def get(self, id):
+        """Get Distribution Profile by id"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        self.client.queueServiceActionCall("contentdistribution_distributionprofile", "get", "KalturaDistributionProfile", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaDistributionProfile')
 
     def list(self, filter = NotImplemented, pager = NotImplemented):
         """List all distribution providers"""
@@ -4768,21 +4834,45 @@ class KalturaDistributionProfileService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addObjectIfDefined("filter", filter)
         kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall("contentdistribution_distributionprofile", "list", KalturaDistributionProfileListResponse, kparams)
+        self.client.queueServiceActionCall("contentdistribution_distributionprofile", "list", "KalturaDistributionProfileListResponse", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaDistributionProfileListResponse)
+        return KalturaObjectFactory.create(resultNode, 'KalturaDistributionProfileListResponse')
 
     def listByPartner(self, filter = NotImplemented, pager = NotImplemented):
         kparams = KalturaParams()
         kparams.addObjectIfDefined("filter", filter)
         kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall("contentdistribution_distributionprofile", "listByPartner", KalturaDistributionProfileListResponse, kparams)
+        self.client.queueServiceActionCall("contentdistribution_distributionprofile", "listByPartner", "KalturaDistributionProfileListResponse", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaDistributionProfileListResponse)
+        return KalturaObjectFactory.create(resultNode, 'KalturaDistributionProfileListResponse')
+
+    def update(self, id, distributionProfile):
+        """Update Distribution Profile by id"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        kparams.addObjectIfDefined("distributionProfile", distributionProfile)
+        self.client.queueServiceActionCall("contentdistribution_distributionprofile", "update", "KalturaDistributionProfile", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaDistributionProfile')
+
+    def updateStatus(self, id, status):
+        """Update Distribution Profile status by id"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        kparams.addIntIfDefined("status", status);
+        self.client.queueServiceActionCall("contentdistribution_distributionprofile", "updateStatus", "KalturaDistributionProfile", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaDistributionProfile')
 
 
 # @package Kaltura
@@ -4798,55 +4888,32 @@ class KalturaEntryDistributionService(KalturaServiceBase):
 
         kparams = KalturaParams()
         kparams.addObjectIfDefined("entryDistribution", entryDistribution)
-        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "add", KalturaEntryDistribution, kparams)
+        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "add", "KalturaEntryDistribution", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaEntryDistribution)
-
-    def get(self, id):
-        """Get Entry Distribution by id"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "get", KalturaEntryDistribution, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaEntryDistribution)
-
-    def validate(self, id):
-        """Validates Entry Distribution by id for submission"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "validate", KalturaEntryDistribution, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaEntryDistribution)
-
-    def update(self, id, entryDistribution):
-        """Update Entry Distribution by id"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        kparams.addObjectIfDefined("entryDistribution", entryDistribution)
-        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "update", KalturaEntryDistribution, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaEntryDistribution)
+        return KalturaObjectFactory.create(resultNode, 'KalturaEntryDistribution')
 
     def delete(self, id):
         """Delete Entry Distribution by id"""
 
         kparams = KalturaParams()
         kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "delete", None, kparams)
+        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "delete", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
+
+    def get(self, id):
+        """Get Entry Distribution by id"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "get", "KalturaEntryDistribution", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaEntryDistribution')
 
     def list(self, filter = NotImplemented, pager = NotImplemented):
         """List all distribution providers"""
@@ -4854,67 +4921,31 @@ class KalturaEntryDistributionService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addObjectIfDefined("filter", filter)
         kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "list", KalturaEntryDistributionListResponse, kparams)
+        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "list", "KalturaEntryDistributionListResponse", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaEntryDistributionListResponse)
-
-    def submitAdd(self, id, submitWhenReady = False):
-        """Submits Entry Distribution to the remote destination"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        kparams.addBoolIfDefined("submitWhenReady", submitWhenReady);
-        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "submitAdd", KalturaEntryDistribution, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaEntryDistribution)
-
-    def submitUpdate(self, id):
-        """Submits Entry Distribution changes to the remote destination"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "submitUpdate", KalturaEntryDistribution, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaEntryDistribution)
-
-    def submitFetchReport(self, id):
-        """Submits Entry Distribution report request"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "submitFetchReport", KalturaEntryDistribution, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaEntryDistribution)
-
-    def submitDelete(self, id):
-        """Deletes Entry Distribution from the remote destination"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "submitDelete", KalturaEntryDistribution, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaEntryDistribution)
+        return KalturaObjectFactory.create(resultNode, 'KalturaEntryDistributionListResponse')
 
     def retrySubmit(self, id):
         """Retries last submit action"""
 
         kparams = KalturaParams()
         kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "retrySubmit", KalturaEntryDistribution, kparams)
+        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "retrySubmit", "KalturaEntryDistribution", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaEntryDistribution)
+        return KalturaObjectFactory.create(resultNode, 'KalturaEntryDistribution')
+
+    def serveReturnedData(self, id, actionType):
+        """Serves entry distribution returned data"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        kparams.addIntIfDefined("actionType", actionType);
+        self.client.queueServiceActionCall('contentdistribution_entrydistribution', 'serveReturnedData', None ,kparams)
+        return self.client.getServeUrl()
 
     def serveSentData(self, id, actionType):
         """Serves entry distribution sent data"""
@@ -4925,14 +4956,73 @@ class KalturaEntryDistributionService(KalturaServiceBase):
         self.client.queueServiceActionCall('contentdistribution_entrydistribution', 'serveSentData', None ,kparams)
         return self.client.getServeUrl()
 
-    def serveReturnedData(self, id, actionType):
-        """Serves entry distribution returned data"""
+    def submitAdd(self, id, submitWhenReady = False):
+        """Submits Entry Distribution to the remote destination"""
 
         kparams = KalturaParams()
         kparams.addIntIfDefined("id", id);
-        kparams.addIntIfDefined("actionType", actionType);
-        self.client.queueServiceActionCall('contentdistribution_entrydistribution', 'serveReturnedData', None ,kparams)
-        return self.client.getServeUrl()
+        kparams.addBoolIfDefined("submitWhenReady", submitWhenReady);
+        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "submitAdd", "KalturaEntryDistribution", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaEntryDistribution')
+
+    def submitDelete(self, id):
+        """Deletes Entry Distribution from the remote destination"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "submitDelete", "KalturaEntryDistribution", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaEntryDistribution')
+
+    def submitFetchReport(self, id):
+        """Submits Entry Distribution report request"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "submitFetchReport", "KalturaEntryDistribution", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaEntryDistribution')
+
+    def submitUpdate(self, id):
+        """Submits Entry Distribution changes to the remote destination"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "submitUpdate", "KalturaEntryDistribution", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaEntryDistribution')
+
+    def update(self, id, entryDistribution):
+        """Update Entry Distribution by id"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        kparams.addObjectIfDefined("entryDistribution", entryDistribution)
+        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "update", "KalturaEntryDistribution", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaEntryDistribution')
+
+    def validate(self, id):
+        """Validates Entry Distribution by id for submission"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        self.client.queueServiceActionCall("contentdistribution_entrydistribution", "validate", "KalturaEntryDistribution", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaEntryDistribution')
 
 
 # @package Kaltura
@@ -4949,11 +5039,11 @@ class KalturaDistributionProviderService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addObjectIfDefined("filter", filter)
         kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall("contentdistribution_distributionprovider", "list", KalturaDistributionProviderListResponse, kparams)
+        self.client.queueServiceActionCall("contentdistribution_distributionprovider", "list", "KalturaDistributionProviderListResponse", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaDistributionProviderListResponse)
+        return KalturaObjectFactory.create(resultNode, 'KalturaDistributionProviderListResponse')
 
 
 # @package Kaltura
@@ -4969,44 +5059,32 @@ class KalturaGenericDistributionProviderService(KalturaServiceBase):
 
         kparams = KalturaParams()
         kparams.addObjectIfDefined("genericDistributionProvider", genericDistributionProvider)
-        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovider", "add", KalturaGenericDistributionProvider, kparams)
+        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovider", "add", "KalturaGenericDistributionProvider", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaGenericDistributionProvider)
-
-    def get(self, id):
-        """Get Generic Distribution Provider by id"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovider", "get", KalturaGenericDistributionProvider, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaGenericDistributionProvider)
-
-    def update(self, id, genericDistributionProvider):
-        """Update Generic Distribution Provider by id"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        kparams.addObjectIfDefined("genericDistributionProvider", genericDistributionProvider)
-        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovider", "update", KalturaGenericDistributionProvider, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaGenericDistributionProvider)
+        return KalturaObjectFactory.create(resultNode, 'KalturaGenericDistributionProvider')
 
     def delete(self, id):
         """Delete Generic Distribution Provider by id"""
 
         kparams = KalturaParams()
         kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovider", "delete", None, kparams)
+        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovider", "delete", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
+
+    def get(self, id):
+        """Get Generic Distribution Provider by id"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovider", "get", "KalturaGenericDistributionProvider", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaGenericDistributionProvider')
 
     def list(self, filter = NotImplemented, pager = NotImplemented):
         """List all distribution providers"""
@@ -5014,11 +5092,23 @@ class KalturaGenericDistributionProviderService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addObjectIfDefined("filter", filter)
         kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovider", "list", KalturaGenericDistributionProviderListResponse, kparams)
+        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovider", "list", "KalturaGenericDistributionProviderListResponse", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaGenericDistributionProviderListResponse)
+        return KalturaObjectFactory.create(resultNode, 'KalturaGenericDistributionProviderListResponse')
+
+    def update(self, id, genericDistributionProvider):
+        """Update Generic Distribution Provider by id"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        kparams.addObjectIfDefined("genericDistributionProvider", genericDistributionProvider)
+        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovider", "update", "KalturaGenericDistributionProvider", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaGenericDistributionProvider')
 
 
 # @package Kaltura
@@ -5034,11 +5124,11 @@ class KalturaGenericDistributionProviderActionService(KalturaServiceBase):
 
         kparams = KalturaParams()
         kparams.addObjectIfDefined("genericDistributionProviderAction", genericDistributionProviderAction)
-        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "add", KalturaGenericDistributionProviderAction, kparams)
+        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "add", "KalturaGenericDistributionProviderAction", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaGenericDistributionProviderAction)
+        return KalturaObjectFactory.create(resultNode, 'KalturaGenericDistributionProviderAction')
 
     def addMrssTransform(self, id, xslData):
         """Add MRSS transform file to generic distribution provider action"""
@@ -5046,24 +5136,23 @@ class KalturaGenericDistributionProviderActionService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addIntIfDefined("id", id);
         kparams.addStringIfDefined("xslData", xslData)
-        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "addMrssTransform", KalturaGenericDistributionProviderAction, kparams)
+        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "addMrssTransform", "KalturaGenericDistributionProviderAction", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaGenericDistributionProviderAction)
+        return KalturaObjectFactory.create(resultNode, 'KalturaGenericDistributionProviderAction')
 
     def addMrssTransformFromFile(self, id, xslFile):
         """Add MRSS transform file to generic distribution provider action"""
 
         kparams = KalturaParams()
         kparams.addIntIfDefined("id", id);
-        kfiles = KalturaFiles()
-        kfiles.put("xslFile", xslFile);
-        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "addMrssTransformFromFile", KalturaGenericDistributionProviderAction, kparams, kfiles)
+        kfiles = {"xslFile": xslFile}
+        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "addMrssTransformFromFile", "KalturaGenericDistributionProviderAction", kparams, kfiles)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaGenericDistributionProviderAction)
+        return KalturaObjectFactory.create(resultNode, 'KalturaGenericDistributionProviderAction')
 
     def addMrssValidate(self, id, xsdData):
         """Add MRSS validate file to generic distribution provider action"""
@@ -5071,24 +5160,23 @@ class KalturaGenericDistributionProviderActionService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addIntIfDefined("id", id);
         kparams.addStringIfDefined("xsdData", xsdData)
-        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "addMrssValidate", KalturaGenericDistributionProviderAction, kparams)
+        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "addMrssValidate", "KalturaGenericDistributionProviderAction", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaGenericDistributionProviderAction)
+        return KalturaObjectFactory.create(resultNode, 'KalturaGenericDistributionProviderAction')
 
     def addMrssValidateFromFile(self, id, xsdFile):
         """Add MRSS validate file to generic distribution provider action"""
 
         kparams = KalturaParams()
         kparams.addIntIfDefined("id", id);
-        kfiles = KalturaFiles()
-        kfiles.put("xsdFile", xsdFile);
-        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "addMrssValidateFromFile", KalturaGenericDistributionProviderAction, kparams, kfiles)
+        kfiles = {"xsdFile": xsdFile}
+        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "addMrssValidateFromFile", "KalturaGenericDistributionProviderAction", kparams, kfiles)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaGenericDistributionProviderAction)
+        return KalturaObjectFactory.create(resultNode, 'KalturaGenericDistributionProviderAction')
 
     def addResultsTransform(self, id, transformData):
         """Add results transform file to generic distribution provider action"""
@@ -5096,79 +5184,30 @@ class KalturaGenericDistributionProviderActionService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addIntIfDefined("id", id);
         kparams.addStringIfDefined("transformData", transformData)
-        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "addResultsTransform", KalturaGenericDistributionProviderAction, kparams)
+        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "addResultsTransform", "KalturaGenericDistributionProviderAction", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaGenericDistributionProviderAction)
+        return KalturaObjectFactory.create(resultNode, 'KalturaGenericDistributionProviderAction')
 
     def addResultsTransformFromFile(self, id, transformFile):
         """Add MRSS transform file to generic distribution provider action"""
 
         kparams = KalturaParams()
         kparams.addIntIfDefined("id", id);
-        kfiles = KalturaFiles()
-        kfiles.put("transformFile", transformFile);
-        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "addResultsTransformFromFile", KalturaGenericDistributionProviderAction, kparams, kfiles)
+        kfiles = {"transformFile": transformFile}
+        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "addResultsTransformFromFile", "KalturaGenericDistributionProviderAction", kparams, kfiles)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaGenericDistributionProviderAction)
-
-    def get(self, id):
-        """Get Generic Distribution Provider Action by id"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "get", KalturaGenericDistributionProviderAction, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaGenericDistributionProviderAction)
-
-    def getByProviderId(self, genericDistributionProviderId, actionType):
-        """Get Generic Distribution Provider Action by provider id"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("genericDistributionProviderId", genericDistributionProviderId);
-        kparams.addIntIfDefined("actionType", actionType);
-        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "getByProviderId", KalturaGenericDistributionProviderAction, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaGenericDistributionProviderAction)
-
-    def updateByProviderId(self, genericDistributionProviderId, actionType, genericDistributionProviderAction):
-        """Update Generic Distribution Provider Action by provider id"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("genericDistributionProviderId", genericDistributionProviderId);
-        kparams.addIntIfDefined("actionType", actionType);
-        kparams.addObjectIfDefined("genericDistributionProviderAction", genericDistributionProviderAction)
-        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "updateByProviderId", KalturaGenericDistributionProviderAction, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaGenericDistributionProviderAction)
-
-    def update(self, id, genericDistributionProviderAction):
-        """Update Generic Distribution Provider Action by id"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("id", id);
-        kparams.addObjectIfDefined("genericDistributionProviderAction", genericDistributionProviderAction)
-        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "update", KalturaGenericDistributionProviderAction, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaGenericDistributionProviderAction)
+        return KalturaObjectFactory.create(resultNode, 'KalturaGenericDistributionProviderAction')
 
     def delete(self, id):
         """Delete Generic Distribution Provider Action by id"""
 
         kparams = KalturaParams()
         kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "delete", None, kparams)
+        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "delete", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
@@ -5179,10 +5218,33 @@ class KalturaGenericDistributionProviderActionService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addIntIfDefined("genericDistributionProviderId", genericDistributionProviderId);
         kparams.addIntIfDefined("actionType", actionType);
-        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "deleteByProviderId", None, kparams)
+        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "deleteByProviderId", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
+
+    def get(self, id):
+        """Get Generic Distribution Provider Action by id"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "get", "KalturaGenericDistributionProviderAction", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaGenericDistributionProviderAction')
+
+    def getByProviderId(self, genericDistributionProviderId, actionType):
+        """Get Generic Distribution Provider Action by provider id"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("genericDistributionProviderId", genericDistributionProviderId);
+        kparams.addIntIfDefined("actionType", actionType);
+        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "getByProviderId", "KalturaGenericDistributionProviderAction", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaGenericDistributionProviderAction')
 
     def list(self, filter = NotImplemented, pager = NotImplemented):
         """List all distribution providers"""
@@ -5190,11 +5252,36 @@ class KalturaGenericDistributionProviderActionService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addObjectIfDefined("filter", filter)
         kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "list", KalturaGenericDistributionProviderActionListResponse, kparams)
+        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "list", "KalturaGenericDistributionProviderActionListResponse", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaGenericDistributionProviderActionListResponse)
+        return KalturaObjectFactory.create(resultNode, 'KalturaGenericDistributionProviderActionListResponse')
+
+    def update(self, id, genericDistributionProviderAction):
+        """Update Generic Distribution Provider Action by id"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("id", id);
+        kparams.addObjectIfDefined("genericDistributionProviderAction", genericDistributionProviderAction)
+        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "update", "KalturaGenericDistributionProviderAction", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaGenericDistributionProviderAction')
+
+    def updateByProviderId(self, genericDistributionProviderId, actionType, genericDistributionProviderAction):
+        """Update Generic Distribution Provider Action by provider id"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("genericDistributionProviderId", genericDistributionProviderId);
+        kparams.addIntIfDefined("actionType", actionType);
+        kparams.addObjectIfDefined("genericDistributionProviderAction", genericDistributionProviderAction)
+        self.client.queueServiceActionCall("contentdistribution_genericdistributionprovideraction", "updateByProviderId", "KalturaGenericDistributionProviderAction", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaGenericDistributionProviderAction')
 
 ########## main ##########
 class KalturaContentDistributionClientPlugin(KalturaClientPlugin):
@@ -5211,6 +5298,11 @@ class KalturaContentDistributionClientPlugin(KalturaClientPlugin):
     # @return array<KalturaServiceBase>
     def getServices(self):
         return {
+            'distributionProfile': KalturaDistributionProfileService,
+            'entryDistribution': KalturaEntryDistributionService,
+            'distributionProvider': KalturaDistributionProviderService,
+            'genericDistributionProvider': KalturaGenericDistributionProviderService,
+            'genericDistributionProviderAction': KalturaGenericDistributionProviderActionService,
         }
 
     def getEnums(self):
@@ -5298,6 +5390,7 @@ class KalturaContentDistributionClientPlugin(KalturaClientPlugin):
             'KalturaGenericDistributionProfileFilter': KalturaGenericDistributionProfileFilter,
             'KalturaGenericDistributionProviderFilter': KalturaGenericDistributionProviderFilter,
             'KalturaSyndicationDistributionProfileFilter': KalturaSyndicationDistributionProfileFilter,
+            'KalturaSyndicationDistributionProviderFilter': KalturaSyndicationDistributionProviderFilter,
         }
 
     # @return string

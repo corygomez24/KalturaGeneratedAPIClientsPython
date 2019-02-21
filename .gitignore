@@ -1,0 +1,32 @@
+*.pyc
+*.pyo
+*venv/
+.idea/
+.vscode/
+.settings
+.pydevproject
+.ropeproject
+.DS_Store
+/deploy-state.json
+web/base/local_*settings.py
+web/apps/mediatool/selenium_tests/test_config.json
+config.codekit
+/etc/
+/.coverage
+/.swo
+/.swp
+infrastructure_support/local_env/vendor.tar.bz2
+*.ipynb_checkpoints*
+*.slsc
+
+# Emacs stuff
+*~
+*#
+
+# JS modules
+node_modules/
+bower_components/
+npm-debug.log
+
+local.env
+test-import

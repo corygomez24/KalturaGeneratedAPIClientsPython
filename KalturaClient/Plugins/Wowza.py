@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,8 +27,21 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -66,7 +79,9 @@ class KalturaWowzaMediaServerNode(KalturaMediaServerNode):
             tags=NotImplemented,
             dc=NotImplemented,
             parentId=NotImplemented,
-            playbackDomain=NotImplemented,
+            environment=NotImplemented,
+            deliveryProfileIds=NotImplemented,
+            config=NotImplemented,
             applicationName=NotImplemented,
             mediaServerPortConfig=NotImplemented,
             mediaServerPlaybackDomainConfig=NotImplemented,
@@ -91,7 +106,9 @@ class KalturaWowzaMediaServerNode(KalturaMediaServerNode):
             tags,
             dc,
             parentId,
-            playbackDomain,
+            environment,
+            deliveryProfileIds,
+            config,
             applicationName,
             mediaServerPortConfig,
             mediaServerPlaybackDomainConfig)
@@ -212,11 +229,11 @@ class KalturaWowzaMediaServerNodeBaseFilter(KalturaMediaServerNodeFilter):
             tagsMultiLikeAnd=NotImplemented,
             dcEqual=NotImplemented,
             dcIn=NotImplemented,
-            parentIdEqual=NotImplemented,
-            parentIdIn=NotImplemented,
-            playbackDomainLike=NotImplemented,
-            playbackDomainMultiLikeOr=NotImplemented,
-            playbackDomainMultiLikeAnd=NotImplemented):
+            parentIdLike=NotImplemented,
+            parentIdMultiLikeOr=NotImplemented,
+            parentIdMultiLikeAnd=NotImplemented,
+            environmentEqual=NotImplemented,
+            environmentIn=NotImplemented):
         KalturaMediaServerNodeFilter.__init__(self,
             orderBy,
             advancedSearch,
@@ -244,11 +261,11 @@ class KalturaWowzaMediaServerNodeBaseFilter(KalturaMediaServerNodeFilter):
             tagsMultiLikeAnd,
             dcEqual,
             dcIn,
-            parentIdEqual,
-            parentIdIn,
-            playbackDomainLike,
-            playbackDomainMultiLikeOr,
-            playbackDomainMultiLikeAnd)
+            parentIdLike,
+            parentIdMultiLikeOr,
+            parentIdMultiLikeAnd,
+            environmentEqual,
+            environmentIn)
 
 
     PROPERTY_LOADERS = {
@@ -294,11 +311,11 @@ class KalturaWowzaMediaServerNodeFilter(KalturaWowzaMediaServerNodeBaseFilter):
             tagsMultiLikeAnd=NotImplemented,
             dcEqual=NotImplemented,
             dcIn=NotImplemented,
-            parentIdEqual=NotImplemented,
-            parentIdIn=NotImplemented,
-            playbackDomainLike=NotImplemented,
-            playbackDomainMultiLikeOr=NotImplemented,
-            playbackDomainMultiLikeAnd=NotImplemented):
+            parentIdLike=NotImplemented,
+            parentIdMultiLikeOr=NotImplemented,
+            parentIdMultiLikeAnd=NotImplemented,
+            environmentEqual=NotImplemented,
+            environmentIn=NotImplemented):
         KalturaWowzaMediaServerNodeBaseFilter.__init__(self,
             orderBy,
             advancedSearch,
@@ -326,11 +343,11 @@ class KalturaWowzaMediaServerNodeFilter(KalturaWowzaMediaServerNodeBaseFilter):
             tagsMultiLikeAnd,
             dcEqual,
             dcIn,
-            parentIdEqual,
-            parentIdIn,
-            playbackDomainLike,
-            playbackDomainMultiLikeOr,
-            playbackDomainMultiLikeAnd)
+            parentIdLike,
+            parentIdMultiLikeOr,
+            parentIdMultiLikeAnd,
+            environmentEqual,
+            environmentIn)
 
 
     PROPERTY_LOADERS = {

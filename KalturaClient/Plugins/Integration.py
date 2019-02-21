@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,15 +27,30 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from Metadata import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from .Metadata import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
 # @subpackage Client
 class KalturaIntegrationProviderType(object):
     CIELO24 = "cielo24.Cielo24"
+    DEXTER = "dexterIntegration.Dexter"
+    EXAMPLE = "exampleIntegration.Example"
     VOICEBASE = "voicebase.Voicebase"
 
     def __init__(self, value):
@@ -47,6 +62,7 @@ class KalturaIntegrationProviderType(object):
 # @package Kaltura
 # @subpackage Client
 class KalturaIntegrationTriggerType(object):
+    BPM_EVENT_NOTIFICATION = "bpmEventNotificationIntegration.BpmEventNotification"
     MANUAL = "1"
 
     def __init__(self, value):
@@ -129,9 +145,9 @@ class KalturaIntegrationJobData(KalturaJobData):
     PROPERTY_LOADERS = {
         'callbackNotificationUrl': getXmlNodeText, 
         'providerType': (KalturaEnumsFactory.createString, "KalturaIntegrationProviderType"), 
-        'providerData': (KalturaObjectFactory.create, KalturaIntegrationJobProviderData), 
+        'providerData': (KalturaObjectFactory.create, 'KalturaIntegrationJobProviderData'), 
         'triggerType': (KalturaEnumsFactory.createString, "KalturaIntegrationTriggerType"), 
-        'triggerData': (KalturaObjectFactory.create, KalturaIntegrationJobTriggerData), 
+        'triggerData': (KalturaObjectFactory.create, 'KalturaIntegrationJobTriggerData'), 
     }
 
     def fromXml(self, node):
@@ -192,7 +208,7 @@ class KalturaIntegrationService(KalturaServiceBase):
         kparams.addObjectIfDefined("data", data)
         kparams.addStringIfDefined("objectType", objectType)
         kparams.addStringIfDefined("objectId", objectId)
-        self.client.queueServiceActionCall("integration_integration", "dispatch", None, kparams)
+        self.client.queueServiceActionCall("integration_integration", "dispatch", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
@@ -201,7 +217,7 @@ class KalturaIntegrationService(KalturaServiceBase):
     def notify(self, id):
         kparams = KalturaParams()
         kparams.addIntIfDefined("id", id);
-        self.client.queueServiceActionCall("integration_integration", "notify", None, kparams)
+        self.client.queueServiceActionCall("integration_integration", "notify", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
@@ -221,6 +237,7 @@ class KalturaIntegrationClientPlugin(KalturaClientPlugin):
     # @return array<KalturaServiceBase>
     def getServices(self):
         return {
+            'integration': KalturaIntegrationService,
         }
 
     def getEnums(self):

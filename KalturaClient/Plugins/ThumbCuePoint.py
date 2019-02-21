@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,9 +27,22 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from CuePoint import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from .CuePoint import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -91,6 +104,8 @@ class KalturaThumbCuePoint(KalturaCuePoint):
             forceStop=NotImplemented,
             thumbOffset=NotImplemented,
             systemName=NotImplemented,
+            isMomentary=NotImplemented,
+            copiedFrom=NotImplemented,
             assetId=NotImplemented,
             description=NotImplemented,
             title=NotImplemented,
@@ -111,7 +126,9 @@ class KalturaThumbCuePoint(KalturaCuePoint):
             partnerSortValue,
             forceStop,
             thumbOffset,
-            systemName)
+            systemName,
+            isMomentary,
+            copiedFrom)
 
         # @var string
         self.assetId = assetId
@@ -549,12 +566,12 @@ class KalturaTimedThumbAssetBaseFilter(KalturaThumbAssetFilter):
             updatedAtLessThanOrEqual=NotImplemented,
             deletedAtGreaterThanOrEqual=NotImplemented,
             deletedAtLessThanOrEqual=NotImplemented,
+            typeIn=NotImplemented,
             thumbParamsIdEqual=NotImplemented,
             thumbParamsIdIn=NotImplemented,
             statusEqual=NotImplemented,
             statusIn=NotImplemented,
-            statusNotIn=NotImplemented,
-            typeIn=NotImplemented):
+            statusNotIn=NotImplemented):
         KalturaThumbAssetFilter.__init__(self,
             orderBy,
             advancedSearch,
@@ -575,12 +592,12 @@ class KalturaTimedThumbAssetBaseFilter(KalturaThumbAssetFilter):
             updatedAtLessThanOrEqual,
             deletedAtGreaterThanOrEqual,
             deletedAtLessThanOrEqual,
+            typeIn,
             thumbParamsIdEqual,
             thumbParamsIdIn,
             statusEqual,
             statusIn,
-            statusNotIn,
-            typeIn)
+            statusNotIn)
 
 
     PROPERTY_LOADERS = {
@@ -619,12 +636,12 @@ class KalturaTimedThumbAssetFilter(KalturaTimedThumbAssetBaseFilter):
             updatedAtLessThanOrEqual=NotImplemented,
             deletedAtGreaterThanOrEqual=NotImplemented,
             deletedAtLessThanOrEqual=NotImplemented,
+            typeIn=NotImplemented,
             thumbParamsIdEqual=NotImplemented,
             thumbParamsIdIn=NotImplemented,
             statusEqual=NotImplemented,
             statusIn=NotImplemented,
-            statusNotIn=NotImplemented,
-            typeIn=NotImplemented):
+            statusNotIn=NotImplemented):
         KalturaTimedThumbAssetBaseFilter.__init__(self,
             orderBy,
             advancedSearch,
@@ -645,12 +662,12 @@ class KalturaTimedThumbAssetFilter(KalturaTimedThumbAssetBaseFilter):
             updatedAtLessThanOrEqual,
             deletedAtGreaterThanOrEqual,
             deletedAtLessThanOrEqual,
+            typeIn,
             thumbParamsIdEqual,
             thumbParamsIdIn,
             statusEqual,
             statusIn,
-            statusNotIn,
-            typeIn)
+            statusNotIn)
 
 
     PROPERTY_LOADERS = {

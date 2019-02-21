@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,8 +27,21 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -76,6 +89,9 @@ class KalturaVirusScanProfileStatus(object):
 # @subpackage Client
 class KalturaVirusScanEngineType(object):
     CLAMAV_SCAN_ENGINE = "clamAVScanEngine.ClamAV"
+    SYMANTEC_SCAN_DIRECT_ENGINE = "symantecScanEngine.SymantecScanDirectEngine"
+    SYMANTEC_SCAN_ENGINE = "symantecScanEngine.SymantecScanEngine"
+    SYMANTEC_SCAN_JAVA_ENGINE = "symantecScanEngine.SymantecScanJavaEngine"
 
     def __init__(self, value):
         self.value = value
@@ -153,7 +169,7 @@ class KalturaVirusScanProfile(KalturaObjectBase):
         'name': getXmlNodeText, 
         'status': (KalturaEnumsFactory.createInt, "KalturaVirusScanProfileStatus"), 
         'engineType': (KalturaEnumsFactory.createString, "KalturaVirusScanEngineType"), 
-        'entryFilter': (KalturaObjectFactory.create, KalturaBaseEntryFilter), 
+        'entryFilter': (KalturaObjectFactory.create, 'KalturaBaseEntryFilter'), 
         'actionIfInfected': (KalturaEnumsFactory.createInt, "KalturaVirusFoundAction"), 
     }
 
@@ -250,14 +266,14 @@ class KalturaParseCaptionAssetJobData(KalturaJobData):
 # @subpackage Client
 class KalturaVirusScanJobData(KalturaJobData):
     def __init__(self,
-            srcFilePath=NotImplemented,
+            fileContainer=NotImplemented,
             flavorAssetId=NotImplemented,
             scanResult=NotImplemented,
             virusFoundAction=NotImplemented):
         KalturaJobData.__init__(self)
 
-        # @var string
-        self.srcFilePath = srcFilePath
+        # @var KalturaFileContainer
+        self.fileContainer = fileContainer
 
         # @var string
         self.flavorAssetId = flavorAssetId
@@ -270,7 +286,7 @@ class KalturaVirusScanJobData(KalturaJobData):
 
 
     PROPERTY_LOADERS = {
-        'srcFilePath': getXmlNodeText, 
+        'fileContainer': (KalturaObjectFactory.create, 'KalturaFileContainer'), 
         'flavorAssetId': getXmlNodeText, 
         'scanResult': (KalturaEnumsFactory.createInt, "KalturaVirusScanJobResult"), 
         'virusFoundAction': (KalturaEnumsFactory.createInt, "KalturaVirusFoundAction"), 
@@ -283,17 +299,17 @@ class KalturaVirusScanJobData(KalturaJobData):
     def toParams(self):
         kparams = KalturaJobData.toParams(self)
         kparams.put("objectType", "KalturaVirusScanJobData")
-        kparams.addStringIfDefined("srcFilePath", self.srcFilePath)
+        kparams.addObjectIfDefined("fileContainer", self.fileContainer)
         kparams.addStringIfDefined("flavorAssetId", self.flavorAssetId)
         kparams.addIntEnumIfDefined("scanResult", self.scanResult)
         kparams.addIntEnumIfDefined("virusFoundAction", self.virusFoundAction)
         return kparams
 
-    def getSrcFilePath(self):
-        return self.srcFilePath
+    def getFileContainer(self):
+        return self.fileContainer
 
-    def setSrcFilePath(self, newSrcFilePath):
-        self.srcFilePath = newSrcFilePath
+    def setFileContainer(self, newFileContainer):
+        self.fileContainer = newFileContainer
 
     def getFlavorAssetId(self):
         return self.flavorAssetId
@@ -521,7 +537,7 @@ class KalturaVirusScanProfileListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'objects': (KalturaObjectFactory.createArray, KalturaVirusScanProfile), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaVirusScanProfile'), 
     }
 
     def fromXml(self, node):
@@ -599,62 +615,50 @@ class KalturaVirusScanProfileService(KalturaServiceBase):
     def __init__(self, client = None):
         KalturaServiceBase.__init__(self, client)
 
-    def list(self, filter = NotImplemented, pager = NotImplemented):
-        """List virus scan profile objects by filter and pager"""
-
-        kparams = KalturaParams()
-        kparams.addObjectIfDefined("filter", filter)
-        kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall("virusscan_virusscanprofile", "list", KalturaVirusScanProfileListResponse, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaVirusScanProfileListResponse)
-
     def add(self, virusScanProfile):
         """Allows you to add an virus scan profile object and virus scan profile content associated with Kaltura object"""
 
         kparams = KalturaParams()
         kparams.addObjectIfDefined("virusScanProfile", virusScanProfile)
-        self.client.queueServiceActionCall("virusscan_virusscanprofile", "add", KalturaVirusScanProfile, kparams)
+        self.client.queueServiceActionCall("virusscan_virusscanprofile", "add", "KalturaVirusScanProfile", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaVirusScanProfile)
-
-    def get(self, virusScanProfileId):
-        """Retrieve an virus scan profile object by id"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("virusScanProfileId", virusScanProfileId);
-        self.client.queueServiceActionCall("virusscan_virusscanprofile", "get", KalturaVirusScanProfile, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaVirusScanProfile)
-
-    def update(self, virusScanProfileId, virusScanProfile):
-        """Update exisitng virus scan profile, it is possible to update the virus scan profile id too"""
-
-        kparams = KalturaParams()
-        kparams.addIntIfDefined("virusScanProfileId", virusScanProfileId);
-        kparams.addObjectIfDefined("virusScanProfile", virusScanProfile)
-        self.client.queueServiceActionCall("virusscan_virusscanprofile", "update", KalturaVirusScanProfile, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaVirusScanProfile)
+        return KalturaObjectFactory.create(resultNode, 'KalturaVirusScanProfile')
 
     def delete(self, virusScanProfileId):
         """Mark the virus scan profile as deleted"""
 
         kparams = KalturaParams()
         kparams.addIntIfDefined("virusScanProfileId", virusScanProfileId);
-        self.client.queueServiceActionCall("virusscan_virusscanprofile", "delete", KalturaVirusScanProfile, kparams)
+        self.client.queueServiceActionCall("virusscan_virusscanprofile", "delete", "KalturaVirusScanProfile", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaVirusScanProfile)
+        return KalturaObjectFactory.create(resultNode, 'KalturaVirusScanProfile')
+
+    def get(self, virusScanProfileId):
+        """Retrieve an virus scan profile object by id"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("virusScanProfileId", virusScanProfileId);
+        self.client.queueServiceActionCall("virusscan_virusscanprofile", "get", "KalturaVirusScanProfile", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaVirusScanProfile')
+
+    def list(self, filter = NotImplemented, pager = NotImplemented):
+        """List virus scan profile objects by filter and pager"""
+
+        kparams = KalturaParams()
+        kparams.addObjectIfDefined("filter", filter)
+        kparams.addObjectIfDefined("pager", pager)
+        self.client.queueServiceActionCall("virusscan_virusscanprofile", "list", "KalturaVirusScanProfileListResponse", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaVirusScanProfileListResponse')
 
     def scan(self, flavorAssetId, virusScanProfileId = NotImplemented):
         """Scan flavor asset according to virus scan profile"""
@@ -662,11 +666,23 @@ class KalturaVirusScanProfileService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addStringIfDefined("flavorAssetId", flavorAssetId)
         kparams.addIntIfDefined("virusScanProfileId", virusScanProfileId);
-        self.client.queueServiceActionCall("virusscan_virusscanprofile", "scan", None, kparams)
+        self.client.queueServiceActionCall("virusscan_virusscanprofile", "scan", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
         return getXmlNodeInt(resultNode)
+
+    def update(self, virusScanProfileId, virusScanProfile):
+        """Update existing virus scan profile, it is possible to update the virus scan profile id too"""
+
+        kparams = KalturaParams()
+        kparams.addIntIfDefined("virusScanProfileId", virusScanProfileId);
+        kparams.addObjectIfDefined("virusScanProfile", virusScanProfile)
+        self.client.queueServiceActionCall("virusscan_virusscanprofile", "update", "KalturaVirusScanProfile", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaVirusScanProfile')
 
 ########## main ##########
 class KalturaVirusScanClientPlugin(KalturaClientPlugin):
@@ -683,6 +699,7 @@ class KalturaVirusScanClientPlugin(KalturaClientPlugin):
     # @return array<KalturaServiceBase>
     def getServices(self):
         return {
+            'virusScanProfile': KalturaVirusScanProfileService,
         }
 
     def getEnums(self):

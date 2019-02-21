@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,9 +27,22 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from BulkUpload import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from .BulkUpload import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -66,6 +79,7 @@ class KalturaBulkUploadCsvJobData(KalturaBulkUploadJobData):
             type=NotImplemented,
             emailRecipients=NotImplemented,
             numOfErrorObjects=NotImplemented,
+            privileges=NotImplemented,
             csvVersion=NotImplemented,
             columns=NotImplemented):
         KalturaBulkUploadJobData.__init__(self,
@@ -82,7 +96,8 @@ class KalturaBulkUploadCsvJobData(KalturaBulkUploadJobData):
             objectData,
             type,
             emailRecipients,
-            numOfErrorObjects)
+            numOfErrorObjects,
+            privileges)
 
         # The version of the csv file
         # @var KalturaBulkUploadCsvVersion
@@ -96,7 +111,7 @@ class KalturaBulkUploadCsvJobData(KalturaBulkUploadJobData):
 
     PROPERTY_LOADERS = {
         'csvVersion': (KalturaEnumsFactory.createInt, "KalturaBulkUploadCsvVersion"), 
-        'columns': (KalturaObjectFactory.createArray, KalturaString), 
+        'columns': (KalturaObjectFactory.createArray, 'KalturaString'), 
     }
 
     def fromXml(self, node):

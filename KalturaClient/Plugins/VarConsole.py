@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,8 +27,21 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 ########## classes ##########
@@ -356,8 +369,8 @@ class KalturaPartnerUsageListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'total': (KalturaObjectFactory.create, KalturaVarPartnerUsageItem), 
-        'objects': (KalturaObjectFactory.createArray, KalturaVarPartnerUsageItem), 
+        'total': (KalturaObjectFactory.create, 'KalturaVarPartnerUsageItem'), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaVarPartnerUsageItem'), 
     }
 
     def fromXml(self, node):
@@ -448,99 +461,6 @@ class KalturaVarPartnerUsageTotalItem(KalturaVarPartnerUsageItem):
         return kparams
 
 
-# @package Kaltura
-# @subpackage Client
-class KalturaVarConsolePartnerFilter(KalturaPartnerFilter):
-    def __init__(self,
-            orderBy=NotImplemented,
-            advancedSearch=NotImplemented,
-            idEqual=NotImplemented,
-            idIn=NotImplemented,
-            idNotIn=NotImplemented,
-            nameLike=NotImplemented,
-            nameMultiLikeOr=NotImplemented,
-            nameMultiLikeAnd=NotImplemented,
-            nameEqual=NotImplemented,
-            statusEqual=NotImplemented,
-            statusIn=NotImplemented,
-            partnerPackageEqual=NotImplemented,
-            partnerPackageGreaterThanOrEqual=NotImplemented,
-            partnerPackageLessThanOrEqual=NotImplemented,
-            partnerPackageIn=NotImplemented,
-            partnerGroupTypeEqual=NotImplemented,
-            partnerNameDescriptionWebsiteAdminNameAdminEmailLike=NotImplemented,
-            groupTypeEq=NotImplemented,
-            groupTypeIn=NotImplemented,
-            partnerPermissionsExist=NotImplemented):
-        KalturaPartnerFilter.__init__(self,
-            orderBy,
-            advancedSearch,
-            idEqual,
-            idIn,
-            idNotIn,
-            nameLike,
-            nameMultiLikeOr,
-            nameMultiLikeAnd,
-            nameEqual,
-            statusEqual,
-            statusIn,
-            partnerPackageEqual,
-            partnerPackageGreaterThanOrEqual,
-            partnerPackageLessThanOrEqual,
-            partnerPackageIn,
-            partnerGroupTypeEqual,
-            partnerNameDescriptionWebsiteAdminNameAdminEmailLike)
-
-        # Eq filter for the partner's group type
-        # @var KalturaPartnerGroupType
-        self.groupTypeEq = groupTypeEq
-
-        # In filter for the partner's group type
-        # @var string
-        self.groupTypeIn = groupTypeIn
-
-        # Filter for partner permissions- filter contains comma-separated string of permission names which the returned partners should have.
-        # @var string
-        self.partnerPermissionsExist = partnerPermissionsExist
-
-
-    PROPERTY_LOADERS = {
-        'groupTypeEq': (KalturaEnumsFactory.createInt, "KalturaPartnerGroupType"), 
-        'groupTypeIn': getXmlNodeText, 
-        'partnerPermissionsExist': getXmlNodeText, 
-    }
-
-    def fromXml(self, node):
-        KalturaPartnerFilter.fromXml(self, node)
-        self.fromXmlImpl(node, KalturaVarConsolePartnerFilter.PROPERTY_LOADERS)
-
-    def toParams(self):
-        kparams = KalturaPartnerFilter.toParams(self)
-        kparams.put("objectType", "KalturaVarConsolePartnerFilter")
-        kparams.addIntEnumIfDefined("groupTypeEq", self.groupTypeEq)
-        kparams.addStringIfDefined("groupTypeIn", self.groupTypeIn)
-        kparams.addStringIfDefined("partnerPermissionsExist", self.partnerPermissionsExist)
-        return kparams
-
-    def getGroupTypeEq(self):
-        return self.groupTypeEq
-
-    def setGroupTypeEq(self, newGroupTypeEq):
-        self.groupTypeEq = newGroupTypeEq
-
-    def getGroupTypeIn(self):
-        return self.groupTypeIn
-
-    def setGroupTypeIn(self, newGroupTypeIn):
-        self.groupTypeIn = newGroupTypeIn
-
-    def getPartnerPermissionsExist(self):
-        return self.partnerPermissionsExist
-
-    def setPartnerPermissionsExist(self, newPartnerPermissionsExist):
-        self.partnerPermissionsExist = newPartnerPermissionsExist
-
-
 ########## services ##########
 
 # @package Kaltura
@@ -558,11 +478,11 @@ class KalturaVarConsoleService(KalturaServiceBase):
         kparams.addObjectIfDefined("partnerFilter", partnerFilter)
         kparams.addObjectIfDefined("usageFilter", usageFilter)
         kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall("varconsole_varconsole", "getPartnerUsage", KalturaPartnerUsageListResponse, kparams)
+        self.client.queueServiceActionCall("varconsole_varconsole", "getPartnerUsage", "KalturaPartnerUsageListResponse", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaPartnerUsageListResponse)
+        return KalturaObjectFactory.create(resultNode, 'KalturaPartnerUsageListResponse')
 
     def updateStatus(self, id, status):
         """Function to change a sub-publisher's status"""
@@ -570,7 +490,7 @@ class KalturaVarConsoleService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addIntIfDefined("id", id);
         kparams.addIntIfDefined("status", status);
-        self.client.queueServiceActionCall("varconsole_varconsole", "updateStatus", None, kparams)
+        self.client.queueServiceActionCall("varconsole_varconsole", "updateStatus", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
@@ -590,6 +510,7 @@ class KalturaVarConsoleClientPlugin(KalturaClientPlugin):
     # @return array<KalturaServiceBase>
     def getServices(self):
         return {
+            'varConsole': KalturaVarConsoleService,
         }
 
     def getEnums(self):
@@ -601,7 +522,6 @@ class KalturaVarConsoleClientPlugin(KalturaClientPlugin):
             'KalturaVarPartnerUsageItem': KalturaVarPartnerUsageItem,
             'KalturaPartnerUsageListResponse': KalturaPartnerUsageListResponse,
             'KalturaVarPartnerUsageTotalItem': KalturaVarPartnerUsageTotalItem,
-            'KalturaVarConsolePartnerFilter': KalturaVarConsolePartnerFilter,
         }
 
     # @return string

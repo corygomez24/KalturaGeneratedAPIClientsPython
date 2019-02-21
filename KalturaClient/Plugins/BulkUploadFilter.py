@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,9 +27,23 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from BulkUpload import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from .BulkUpload import *
+from .BulkUploadXml import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 ########## classes ##########
@@ -53,8 +67,8 @@ class KalturaBulkServiceFilterData(KalturaBulkServiceData):
 
 
     PROPERTY_LOADERS = {
-        'filter': (KalturaObjectFactory.create, KalturaFilter), 
-        'templateObject': (KalturaObjectFactory.create, KalturaObjectBase), 
+        'filter': (KalturaObjectFactory.create, 'KalturaFilter'), 
+        'templateObject': (KalturaObjectFactory.create, 'KalturaObjectBase'), 
     }
 
     def fromXml(self, node):
@@ -83,6 +97,71 @@ class KalturaBulkServiceFilterData(KalturaBulkServiceData):
 
 # @package Kaltura
 # @subpackage Client
+class KalturaBulkUploadResultJob(KalturaBulkUploadResult):
+    def __init__(self,
+            id=NotImplemented,
+            bulkUploadJobId=NotImplemented,
+            lineIndex=NotImplemented,
+            partnerId=NotImplemented,
+            status=NotImplemented,
+            action=NotImplemented,
+            objectId=NotImplemented,
+            objectStatus=NotImplemented,
+            bulkUploadResultObjectType=NotImplemented,
+            rowData=NotImplemented,
+            partnerData=NotImplemented,
+            objectErrorDescription=NotImplemented,
+            pluginsData=NotImplemented,
+            errorDescription=NotImplemented,
+            errorCode=NotImplemented,
+            errorType=NotImplemented,
+            jobObjectId=NotImplemented):
+        KalturaBulkUploadResult.__init__(self,
+            id,
+            bulkUploadJobId,
+            lineIndex,
+            partnerId,
+            status,
+            action,
+            objectId,
+            objectStatus,
+            bulkUploadResultObjectType,
+            rowData,
+            partnerData,
+            objectErrorDescription,
+            pluginsData,
+            errorDescription,
+            errorCode,
+            errorType)
+
+        # ID of object being processed by the job
+        # @var int
+        self.jobObjectId = jobObjectId
+
+
+    PROPERTY_LOADERS = {
+        'jobObjectId': getXmlNodeInt, 
+    }
+
+    def fromXml(self, node):
+        KalturaBulkUploadResult.fromXml(self, node)
+        self.fromXmlImpl(node, KalturaBulkUploadResultJob.PROPERTY_LOADERS)
+
+    def toParams(self):
+        kparams = KalturaBulkUploadResult.toParams(self)
+        kparams.put("objectType", "KalturaBulkUploadResultJob")
+        kparams.addIntIfDefined("jobObjectId", self.jobObjectId)
+        return kparams
+
+    def getJobObjectId(self):
+        return self.jobObjectId
+
+    def setJobObjectId(self, newJobObjectId):
+        self.jobObjectId = newJobObjectId
+
+
+# @package Kaltura
+# @subpackage Client
 class KalturaBulkUploadFilterJobData(KalturaBulkUploadJobData):
     """Represents the Bulk upload job data for filter bulk upload"""
 
@@ -101,6 +180,7 @@ class KalturaBulkUploadFilterJobData(KalturaBulkUploadJobData):
             type=NotImplemented,
             emailRecipients=NotImplemented,
             numOfErrorObjects=NotImplemented,
+            privileges=NotImplemented,
             filter=NotImplemented,
             templateObject=NotImplemented):
         KalturaBulkUploadJobData.__init__(self,
@@ -117,7 +197,8 @@ class KalturaBulkUploadFilterJobData(KalturaBulkUploadJobData):
             objectData,
             type,
             emailRecipients,
-            numOfErrorObjects)
+            numOfErrorObjects,
+            privileges)
 
         # Filter for extracting the objects list to upload
         # @var KalturaFilter
@@ -129,8 +210,8 @@ class KalturaBulkUploadFilterJobData(KalturaBulkUploadJobData):
 
 
     PROPERTY_LOADERS = {
-        'filter': (KalturaObjectFactory.create, KalturaFilter), 
-        'templateObject': (KalturaObjectFactory.create, KalturaObjectBase), 
+        'filter': (KalturaObjectFactory.create, 'KalturaFilter'), 
+        'templateObject': (KalturaObjectFactory.create, 'KalturaObjectBase'), 
     }
 
     def fromXml(self, node):
@@ -182,6 +263,7 @@ class KalturaBulkUploadFilterClientPlugin(KalturaClientPlugin):
     def getTypes(self):
         return {
             'KalturaBulkServiceFilterData': KalturaBulkServiceFilterData,
+            'KalturaBulkUploadResultJob': KalturaBulkUploadResultJob,
             'KalturaBulkUploadFilterJobData': KalturaBulkUploadFilterJobData,
         }
 

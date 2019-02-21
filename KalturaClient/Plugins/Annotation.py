@@ -8,7 +8,7 @@
 # to do with audio, video, and animation what Wiki platfroms allow them to do with
 # text.
 #
-# Copyright (C) 2006-2016  Kaltura Inc.
+# Copyright (C) 2006-2019  Kaltura Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -27,9 +27,22 @@
 # ===================================================================================================
 # @package Kaltura
 # @subpackage Client
-from Core import *
-from CuePoint import *
-from ..Base import *
+from __future__ import absolute_import
+
+from .Core import *
+from .CuePoint import *
+from ..Base import (
+    getXmlNodeBool,
+    getXmlNodeFloat,
+    getXmlNodeInt,
+    getXmlNodeText,
+    KalturaClientPlugin,
+    KalturaEnumsFactory,
+    KalturaObjectBase,
+    KalturaObjectFactory,
+    KalturaParams,
+    KalturaServiceBase,
+)
 
 ########## enums ##########
 # @package Kaltura
@@ -77,6 +90,8 @@ class KalturaAnnotation(KalturaCuePoint):
             forceStop=NotImplemented,
             thumbOffset=NotImplemented,
             systemName=NotImplemented,
+            isMomentary=NotImplemented,
+            copiedFrom=NotImplemented,
             parentId=NotImplemented,
             text=NotImplemented,
             endTime=NotImplemented,
@@ -102,7 +117,9 @@ class KalturaAnnotation(KalturaCuePoint):
             partnerSortValue,
             forceStop,
             thumbOffset,
-            systemName)
+            systemName,
+            isMomentary,
+            copiedFrom)
 
         # @var string
         # @insertonly
@@ -228,7 +245,7 @@ class KalturaAnnotationListResponse(KalturaListResponse):
 
 
     PROPERTY_LOADERS = {
-        'objects': (KalturaObjectFactory.createArray, KalturaAnnotation), 
+        'objects': (KalturaObjectFactory.createArray, 'KalturaAnnotation'), 
     }
 
     def fromXml(self, node):
@@ -571,74 +588,41 @@ class KalturaAnnotationService(KalturaServiceBase):
 
         kparams = KalturaParams()
         kparams.addObjectIfDefined("annotation", annotation)
-        self.client.queueServiceActionCall("annotation_annotation", "add", KalturaAnnotation, kparams)
+        self.client.queueServiceActionCall("annotation_annotation", "add", "KalturaAnnotation", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaAnnotation)
-
-    def update(self, id, annotation):
-        """Update annotation by id"""
-
-        kparams = KalturaParams()
-        kparams.addStringIfDefined("id", id)
-        kparams.addObjectIfDefined("annotation", annotation)
-        self.client.queueServiceActionCall("annotation_annotation", "update", KalturaAnnotation, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaAnnotation)
-
-    def list(self, filter = NotImplemented, pager = NotImplemented):
-        """List annotation objects by filter and pager"""
-
-        kparams = KalturaParams()
-        kparams.addObjectIfDefined("filter", filter)
-        kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall("annotation_annotation", "list", KalturaAnnotationListResponse, kparams)
-        if self.client.isMultiRequest():
-            return self.client.getMultiRequestResult()
-        resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaAnnotationListResponse)
+        return KalturaObjectFactory.create(resultNode, 'KalturaAnnotation')
 
     def addFromBulk(self, fileData):
         """Allows you to add multiple cue points objects by uploading XML that contains multiple cue point definitions"""
 
         kparams = KalturaParams()
-        kfiles = KalturaFiles()
-        kfiles.put("fileData", fileData);
-        self.client.queueServiceActionCall("annotation_annotation", "addFromBulk", KalturaCuePointListResponse, kparams, kfiles)
+        kfiles = {"fileData": fileData}
+        self.client.queueServiceActionCall("annotation_annotation", "addFromBulk", "KalturaCuePointListResponse", kparams, kfiles)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaCuePointListResponse)
+        return KalturaObjectFactory.create(resultNode, 'KalturaCuePointListResponse')
 
-    def serveBulk(self, filter = NotImplemented, pager = NotImplemented):
-        """Download multiple cue points objects as XML definitions"""
-
-        kparams = KalturaParams()
-        kparams.addObjectIfDefined("filter", filter)
-        kparams.addObjectIfDefined("pager", pager)
-        self.client.queueServiceActionCall('annotation_annotation', 'serveBulk', None ,kparams)
-        return self.client.getServeUrl()
-
-    def get(self, id):
-        """Retrieve an CuePoint object by id"""
+    def clone(self, id, entryId):
+        """Clone cuePoint with id to given entry"""
 
         kparams = KalturaParams()
         kparams.addStringIfDefined("id", id)
-        self.client.queueServiceActionCall("annotation_annotation", "get", KalturaCuePoint, kparams)
+        kparams.addStringIfDefined("entryId", entryId)
+        self.client.queueServiceActionCall("annotation_annotation", "clone", "KalturaCuePoint", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
-        return KalturaObjectFactory.create(resultNode, KalturaCuePoint)
+        return KalturaObjectFactory.create(resultNode, 'KalturaCuePoint')
 
     def count(self, filter = NotImplemented):
         """count cue point objects by filter"""
 
         kparams = KalturaParams()
         kparams.addObjectIfDefined("filter", filter)
-        self.client.queueServiceActionCall("annotation_annotation", "count", None, kparams)
+        self.client.queueServiceActionCall("annotation_annotation", "count", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
@@ -649,10 +633,65 @@ class KalturaAnnotationService(KalturaServiceBase):
 
         kparams = KalturaParams()
         kparams.addStringIfDefined("id", id)
-        self.client.queueServiceActionCall("annotation_annotation", "delete", None, kparams)
+        self.client.queueServiceActionCall("annotation_annotation", "delete", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
+
+    def get(self, id):
+        """Retrieve an CuePoint object by id"""
+
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("id", id)
+        self.client.queueServiceActionCall("annotation_annotation", "get", "KalturaCuePoint", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaCuePoint')
+
+    def list(self, filter = NotImplemented, pager = NotImplemented):
+        """List annotation objects by filter and pager"""
+
+        kparams = KalturaParams()
+        kparams.addObjectIfDefined("filter", filter)
+        kparams.addObjectIfDefined("pager", pager)
+        self.client.queueServiceActionCall("annotation_annotation", "list", "KalturaAnnotationListResponse", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaAnnotationListResponse')
+
+    def serveBulk(self, filter = NotImplemented, pager = NotImplemented):
+        """Download multiple cue points objects as XML definitions"""
+
+        kparams = KalturaParams()
+        kparams.addObjectIfDefined("filter", filter)
+        kparams.addObjectIfDefined("pager", pager)
+        self.client.queueServiceActionCall('annotation_annotation', 'serveBulk', None ,kparams)
+        return self.client.getServeUrl()
+
+    def update(self, id, annotation):
+        """Update annotation by id"""
+
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("id", id)
+        kparams.addObjectIfDefined("annotation", annotation)
+        self.client.queueServiceActionCall("annotation_annotation", "update", "KalturaAnnotation", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaAnnotation')
+
+    def updateCuePointsTimes(self, id, startTime, endTime = NotImplemented):
+        kparams = KalturaParams()
+        kparams.addStringIfDefined("id", id)
+        kparams.addIntIfDefined("startTime", startTime);
+        kparams.addIntIfDefined("endTime", endTime);
+        self.client.queueServiceActionCall("annotation_annotation", "updateCuePointsTimes", "KalturaCuePoint", kparams)
+        if self.client.isMultiRequest():
+            return self.client.getMultiRequestResult()
+        resultNode = self.client.doQueue()
+        return KalturaObjectFactory.create(resultNode, 'KalturaCuePoint')
 
     def updateStatus(self, id, status):
         """Update cuePoint status by id"""
@@ -660,7 +699,7 @@ class KalturaAnnotationService(KalturaServiceBase):
         kparams = KalturaParams()
         kparams.addStringIfDefined("id", id)
         kparams.addIntIfDefined("status", status);
-        self.client.queueServiceActionCall("annotation_annotation", "updateStatus", None, kparams)
+        self.client.queueServiceActionCall("annotation_annotation", "updateStatus", "None", kparams)
         if self.client.isMultiRequest():
             return self.client.getMultiRequestResult()
         resultNode = self.client.doQueue()
@@ -680,6 +719,7 @@ class KalturaAnnotationClientPlugin(KalturaClientPlugin):
     # @return array<KalturaServiceBase>
     def getServices(self):
         return {
+            'annotation': KalturaAnnotationService,
         }
 
     def getEnums(self):
